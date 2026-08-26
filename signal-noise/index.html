@@ -1,441 +1,518 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Signal & Noise — Workplace Dynamics & Systems Flow</title>
-  <style>
-    :root {
-      --bg: #090d13;
-      --surface: #131b26;
-      --surface-border: #3b4554;
-      --text: #e2e8f0;
-      --text-bright: #ffffff;
-      --text-muted: #94a3b8;
-      --accent-amber: #f59e0b;
-      --accent-blue: #38bdf8;
-      --accent-red: #f87171;
-      --accent-green: #4ade80;
-      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: var(--font-sans);
-      line-height: 1.6;
-      padding: 0 1.5rem 5rem;
-    }
-
-    .container { max-width: 1040px; margin: 0 auto; }
-
-    /* Top Navigation */
-    nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem 0;
-      border-bottom: 2px solid var(--surface-border);
-      font-family: var(--font-mono);
-      font-size: 1rem;
-      font-weight: 600;
-    }
-    nav a { color: var(--accent-amber); text-decoration: none; transition: opacity 0.2s; }
-    nav a:hover { opacity: 0.8; text-decoration: underline; }
-
-    /* Header */
-    header { padding: 3.5rem 0 2rem; text-align: center; }
-    h1 {
-      font-size: 2.75rem;
-      color: var(--text-bright);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 0.75rem;
-    }
-    .subtitle {
-      font-size: 1.25rem;
-      color: var(--text-muted);
-      max-width: 680px;
-      margin: 0 auto 2rem;
-      line-height: 1.5;
-    }
-
-    /* Visualization Canvases */
-    .canvas-container {
-      position: relative;
-      width: 100%;
-      height: 340px;
-      background: var(--surface);
-      border: 2px solid var(--surface-border);
-      border-radius: 8px;
-      margin-bottom: 3.5rem;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    }
-    canvas { display: block; width: 100%; height: 100%; }
-
-    /* Section Typography */
-    h2 {
-      font-size: 1.6rem;
-      color: var(--text-bright);
-      margin: 3rem 0 1rem;
-      font-weight: 600;
-      border-bottom: 2px solid var(--surface-border);
-      padding-bottom: 0.5rem;
-    }
-
-    /* System Cards */
-    .system-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.25rem;
-      margin-top: 1.25rem;
-    }
-    .card {
-      background: var(--surface);
-      border: 2px solid var(--surface-border);
-      border-radius: 8px;
-      padding: 1.5rem;
-      cursor: pointer;
-      transition: border-color 0.2s, transform 0.2s;
-    }
-    .card:hover, .card.active {
-      border-color: var(--accent-amber);
-      transform: translateY(-3px);
-    }
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.75rem;
-    }
-    .card-title { font-weight: 700; color: var(--text-bright); font-size: 1.15rem; }
-    .card-load { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--accent-amber); }
-    .load-bar {
-      height: 8px;
-      background: #0f172a;
-      border-radius: 4px;
-      overflow: hidden;
-      margin-bottom: 1rem;
-      border: 1px solid #334155;
-    }
-    .load-progress { height: 100%; background: var(--accent-amber); }
-    .card-desc { font-size: 0.98rem; color: var(--text); line-height: 1.5; }
-
-    /* Flow Container */
-    .flow-container {
-      background: var(--surface);
-      border: 2px solid var(--surface-border);
-      border-radius: 8px;
-      padding: 1.25rem;
-      margin-top: 1.25rem;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    }
-
-    /* Pattern Metrics Grid */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.25rem;
-      margin-top: 1.25rem;
-    }
-    .metric-card {
-      background: var(--surface);
-      border: 2px solid var(--surface-border);
-      padding: 1.5rem;
-      border-radius: 8px;
-    }
-    .metric-name {
-      font-size: 1rem;
-      font-family: var(--font-mono);
-      font-weight: 700;
-      color: var(--accent-blue);
-      margin-bottom: 0.6rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .metric-desc { font-size: 0.95rem; color: var(--text); line-height: 1.5; }
-
-    footer {
-      margin-top: 5rem;
-      padding-top: 2rem;
-      border-top: 2px solid var(--surface-border);
-      text-align: center;
-      font-family: var(--font-mono);
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-  </style>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%0A%20%20%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%224%22%20fill%3D%22%230e0b06%22/%3E%0A%20%20%3Ctext%20x%3D%2216%22%20y%3D%2222%22%20font-family%3D%22serif%22%20font-size%3D%2216%22%20fill%3D%22%23c9a84c%22%20text-anchor%3D%22middle%22%3E%E2%8A%95%3C/text%3E%0A%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal & Noise — Herff Jones Order Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090f;--fg:#e4dfd6;--dim:rgba(228,223,214,0.28);
+  --move:#4a8faa;--wait:#c8922a;--block:#c85040;--done:#5a9a6a;--purple:#8060b0;--teams:#4a6aaa;
+  --serif:'Instrument Serif',Georgia,serif;--mono:'Geist Mono',monospace;
+}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--fg);font-family:var(--mono);overflow:hidden}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+#header{position:fixed;top:0;left:0;right:0;padding:20px 36px 0;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;z-index:10}
+#title h1{font-family:var(--serif);font-size:20px;font-weight:400;line-height:1.1}
+#title h1 em{font-style:italic;opacity:0.45}
+#title p{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+#legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.leg{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:0.09em;text-transform:uppercase;color:var(--dim)}
+.leg-pip{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.leg-dash{width:18px;height:0;border-top:1px dashed;flex-shrink:0}
+#stats{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;border-top:1px solid rgba(228,223,214,0.07);pointer-events:none;z-index:10;background:rgba(8,9,15,0.8)}
+.stat{padding:11px 22px;text-align:center;border-right:1px solid rgba(228,223,214,0.07)}
+.stat:last-child{border-right:none}
+.stat-n{font-family:var(--serif);font-size:20px;font-style:italic}
+.stat-l{font-size:9px;letter-spacing:0.11em;text-transform:uppercase;color:var(--dim);margin-top:1px}
+#tooltip{position:fixed;pointer-events:none;z-index:20;background:rgba(6,7,14,0.97);border:1px solid rgba(228,223,214,0.12);padding:15px 19px;border-radius:3px;opacity:0;transition:opacity 0.15s;max-width:295px}
+.tt-name{font-family:var(--serif);font-size:17px;font-style:italic;margin-bottom:4px}
+.tt-owner{font-size:10px;letter-spacing:0.11em;text-transform:uppercase;margin-bottom:8px}
+.tt-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.tt-tag{font-size:9px;letter-spacing:0.08em;text-transform:uppercase;padding:3px 7px;border-radius:2px;border:1px solid;opacity:0.75}
+.tt-body{font-size:11px;line-height:1.68;color:var(--dim)}
+.tt-oracle{font-size:10px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(228,223,214,0.08);color:var(--wait);line-height:1.55}
+.tt-friction{font-size:10px;margin-top:7px;color:var(--block);line-height:1.55}
+</style>
 </head>
 <body>
+<canvas id="c"></canvas>
+<div id="cab-nav" style="position:fixed;bottom:0;right:0;z-index:200;padding:.4rem 1rem;background:rgba(8,9,15,.95);border-top:1px solid rgba(228,223,214,.1);border-left:1px solid rgba(228,223,214,.1);font-family:var(--mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;gap:.7rem;"><a href="../about/index.html" style="color:rgba(228,223,214,.5);text-decoration:none;transition:color .2s;">← Cabinet</a> · <button class="kw-share-btn" style="background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:inherit;letter-spacing:inherit;text-transform:inherit;color:rgba(228,223,214,.5);padding:0;transition:color .2s;">Share ↑</button></div>
+<div id="header">
+  <div id="title">
+    <h1>Signal <em>&</em> Noise</h1>
+    <p>Herff Jones · Order Entry Flow · hover to inspect</p>
 
-  <div class="container">
-    <nav>
-      <a href="../index.html">← Master Hub</a>
-      <span>ROOM 04 : FIELD OBSERVATORY</span>
-    </nav>
-
-    <header>
-      <h1>Signal & Noise</h1>
-      <p class="subtitle">Mapping communication flows, latency traps, and human friction points across industrial production systems.</p>
-    </header>
-
-    <!-- Network Canvas -->
-    <div class="canvas-container">
-      <canvas id="networkCanvas"></canvas>
-    </div>
-
-    <!-- Communication Pipeline -->
-    <h2>I. Order & Message Flow Routing</h2>
-    <p style="font-size: 1.05rem; color: var(--text); margin-bottom: 1rem;">
-      Simulated message transmission: <strong>Originator → Coordination → System Core → Decision → Action</strong>. Watch for latency at the system interface layer.
-    </p>
-    <div class="flow-container">
-      <canvas id="flowCanvas" height="220"></canvas>
-    </div>
-
-    <!-- System Map -->
-    <h2>II. Connected System Infrastructure</h2>
-    <div class="system-grid">
-      <div class="card" onclick="highlightSystem('oracle')">
-        <div class="card-header">
-          <span class="card-title">Oracle ERP</span>
-          <span class="card-load">88% LOAD</span>
-        </div>
-        <div class="load-bar"><div class="load-progress" style="width: 88%;"></div></div>
-        <p class="card-desc">Core relational backbone; high validation strictness creating downstream hold queues.</p>
-      </div>
-
-      <div class="card" onclick="highlightSystem('webcenter')">
-        <div class="card-header">
-          <span class="card-title">WebCenter</span>
-          <span class="card-load">65% LOAD</span>
-        </div>
-        <div class="load-bar"><div class="load-progress" style="width: 65%;"></div></div>
-        <p class="card-desc">Asset approval pipeline and customer proof routing; frequent re-entry iterations.</p>
-      </div>
-
-      <div class="card" onclick="highlightSystem('zendesk')">
-        <div class="card-header">
-          <span class="card-title">Zendesk</span>
-          <span class="card-load">92% LOAD</span>
-        </div>
-        <div class="load-bar"><div class="load-progress" style="width: 92%; background: var(--accent-red);"></div></div>
-        <p class="card-desc">Triage intake funnel; high-velocity exception handling and customer inquiries.</p>
-      </div>
-
-      <div class="card" onclick="highlightSystem('wrike')">
-        <div class="card-header">
-          <span class="card-title">Wrike</span>
-          <span class="card-load">45% LOAD</span>
-        </div>
-        <div class="load-bar"><div class="load-progress" style="width: 45%;"></div></div>
-        <p class="card-desc">Task staging and project scheduling; manual handoffs between department leads.</p>
-      </div>
-
-      <div class="card" onclick="highlightSystem('teams')">
-        <div class="card-header">
-          <span class="card-title">MS Teams / Chat</span>
-          <span class="card-load">78% LOAD</span>
-        </div>
-        <div class="load-bar"><div class="load-progress" style="width: 78%;"></div></div>
-        <p class="card-desc">Informal backchannels; critical operational resolutions lost to unsearchable chats.</p>
-      </div>
-
-      <div class="card" onclick="highlightSystem('email')">
-        <div class="card-header">
-          <span class="card-title">Direct Email</span>
-          <span class="card-load">84% LOAD</span>
-        </div>
-        <div class="load-bar"><div class="load-progress" style="width: 84%; background: var(--accent-amber);"></div></div>
-        <p class="card-desc">Siloed message chains; single-point-of-failure communication dependencies.</p>
-      </div>
-    </div>
-
-    <!-- Bottleneck Pattern Metrics -->
-    <h2>III. Friction & Pattern Metrics</h2>
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-name">Re-entry Tax</div>
-        <p class="metric-desc">The computational and cognitive cost of bouncing orders back to intake for minor schema omissions.</p>
-      </div>
-      <div class="metric-card">
-        <div class="metric-name">Dark Communication</div>
-        <p class="metric-desc">High-value exceptions solved via instant message rather than documented system updates.</p>
-      </div>
-      <div class="metric-card">
-        <div class="metric-name">Load-Bearing Person</div>
-        <p class="metric-desc">Single human nodes holding custom procedural knowledge necessary to bridge disconnected tools.</p>
-      </div>
-      <div class="metric-card">
-        <div class="metric-name">Workaround Loop</div>
-        <p class="metric-desc">Informal side-channels established by teams to bypass high-friction system checkpoints.</p>
-      </div>
-    </div>
-
-    <footer>
-      <span>kellis-web.com &middot; Field Observatory &middot; Systems Architecture</span>
-    </footer>
+    <button class="kw-share-btn" style="margin-top:6px;background:transparent;border:1px solid rgba(228,223,214,.2);color:rgba(228,223,214,.5);cursor:pointer;font-family:var(--mono,monospace);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;padding:3px 10px;border-radius:1px;transition:all .2s;">Share ↑</button>
   </div>
+  <div id="legend">
+    <div class="leg"><div class="leg-pip" style="background:var(--move)"></div>order moving</div>
+    <div class="leg"><div class="leg-pip" style="background:var(--wait)"></div>CS hold</div>
+    <div class="leg"><div class="leg-pip" style="background:var(--block)"></div>oracle / error</div>
+    <div class="leg"><div class="leg-pip" style="background:#c8a040"></div>WC↔Oracle re-entry</div>
+    <div class="leg"><div class="leg-dash" style="border-color:var(--teams)"></div>Teams / in-person</div>
+    <div class="leg"><div class="leg-dash" style="border-color:var(--block)"></div>formal reject</div>
+  </div>
+</div>
+<div id="tooltip">
+  <div class="tt-name" id="tt-name"></div>
+  <div class="tt-owner" id="tt-owner"></div>
+  <div class="tt-tags" id="tt-tags"></div>
+  <div class="tt-body" id="tt-body"></div>
+  <div class="tt-oracle" id="tt-oracle"></div>
+  <div class="tt-friction" id="tt-friction"></div>
+</div>
+<div id="stats">
+  <div class="stat"><div class="stat-n" id="s-move">0</div><div class="stat-l">in transit</div></div>
+  <div class="stat"><div class="stat-n" id="s-reentry">0</div><div class="stat-l">WC↔Oracle trips</div></div>
+  <div class="stat"><div class="stat-n" id="s-wait">0</div><div class="stat-l">CS hold</div></div>
+  <div class="stat"><div class="stat-n" id="s-block">0</div><div class="stat-l">oracle error</div></div>
+  <div class="stat"><div class="stat-n" id="s-done">0</div><div class="stat-l">to production</div></div>
+</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H,T=0,balls=[],reentryBalls=[],informalPulses=[],statDone=0,statReentry=0,hovered=null;
 
-  <script>
-    // 1. High-Contrast Ambient Network Canvas
-    const netCanvas = document.getElementById('networkCanvas');
-    const netCtx = netCanvas.getContext('2d');
-    let width, height;
+const C={move:'#4a8faa',wait:'#c8922a',block:'#c85040',done:'#5a9a6a',purple:'#8060b0',teams:'#4a6aaa',reentry:'#c8a040'};
 
-    const nodes = [
-      { label: 'Plant Ops', x: 0.15, y: 0.35, r: 10 },
-      { label: 'Coordinator', x: 0.35, y: 0.65, r: 12 },
-      { label: 'Liaison', x: 0.50, y: 0.28, r: 13 },
-      { label: 'Prepress', x: 0.65, y: 0.72, r: 11 },
-      { label: 'Customer Lead', x: 0.85, y: 0.38, r: 10 },
-      { label: 'QA / Review', x: 0.45, y: 0.85, r: 9 }
-    ];
+// ── NODES ─────────────────────────────────────────────────────────────────────
+const NODES=[
+  {id:'wc', label:'WebCenter Queue', owner:'Order Entry', type:'move', fx:.06,fy:.42,sz:1.0,
+   tags:[{n:'WebCenter',c:C.move}],
+   body:'Orders arrive in WebCenter and come to Order Entry first. Everything enters through OE — completeness check is an OE task.',
+   oracle:null, friction:null},
 
-    function resizeNet() {
-      width = netCanvas.width = netCanvas.parentElement.clientWidth;
-      height = netCanvas.height = netCanvas.parentElement.clientHeight;
+  {id:'oe', label:'Order Entry', owner:'OE — central hub', type:'block', fx:.32,fy:.42,sz:1.55,
+   tags:[{n:'WebCenter',c:C.move},{n:'Oracle',c:C.block}],
+   body:'Everything routes through OE. While processing, data moves back and forth between WebCenter and Oracle repeatedly — checking, entering, verifying, correcting. The number of round trips varies wildly order to order. All notes require a date and timestamp.',
+   oracle:'Oracle is the primary pain point. Data is read from WebCenter and re-keyed into Oracle manually — no automated transfer. Then checked back against WebCenter. Then Oracle may error, requiring correction. Then verified again. Each round trip is a chance for drift or error that can cascade downstream.',
+   friction:'When CS info is wrong, art or signature changes are unresolved, or OE has waited too long, the order is placed on formal hold and rejected to CS. Back-and-forth with CS runs both through the formal system and informally via Teams or walking to their desk.'},
+
+  {id:'cs', label:'CS Hold', owner:'Customer Service', type:'wait', fx:.32,fy:.78,sz:1.1,
+   tags:[{n:'Oracle',c:C.block},{n:'Zendesk',c:C.wait},{n:'Wrike',c:C.done},{n:'Teams',c:C.teams}],
+   body:'Formal hold status in the system. CS verifies and corrects customer info, rep data, art approvals, and signature changes — CS owns tracking those. CS tries to help fill gaps. Notes must be date and timestamped. CS has deeper Oracle access than OE for customer records.',
+   oracle:'CS can make Oracle corrections to customer data that OE cannot directly edit. Some holds require CS to update Oracle before the order can return to OE.',
+   friction:'Timeline is outside OE control. No guaranteed SLA. Communication happens formally through the hold status and informally through Teams or walking over. Sometimes the order returns resolved; sometimes OE has to reject again.'},
+
+  {id:'nl', label:'Namelist', owner:'NL Coordinator', type:'wait', fx:.62,fy:.42,sz:1.2,
+   tags:[{n:'Oracle',c:C.block}],
+   body:'OE pushes to NL once the order is ready. NL enters and validates the namelist — student names, sizing, graduation product details — and sets up CSV file formats that properly link to prepress and production. Everything must be right here or problems surface days later.',
+   oracle:null,
+   friction:'NL rejects always route back through OE first, even when the underlying issue is a CS problem. Typical reasons: missing or wrong data OE needs to fix, CSV format or linking issues, potential typos. If it is a CS issue, OE then formally rejects to CS.'},
+
+  {id:'pp', label:'Prepress', owner:'Downstream', type:'done', fx:.82,fy:.42,sz:0.92,
+   tags:[],
+   body:'NL hands off with properly formatted CSV files linked for production. Once here the order is largely out of OE and NL hands — but corrections can come back.',
+   oracle:null,
+   friction:'Errors that made it through Oracle entry and were not caught in NL can surface here. Corrections return to NL or OE at a stage where changes are harder and more consequential.'},
+
+  {id:'prod', label:'Production', owner:'Downstream', type:'done', fx:.95,fy:.42,sz:0.85,
+   tags:[],
+   body:'Final production. An order reaching here without corrections is a clean run.',
+   oracle:null, friction:null},
+];
+
+const EDGES=[
+  ['wc','oe','main'],
+  ['oe','nl','main'],
+  ['nl','pp','main'],
+  ['pp','prod','main'],
+  ['oe','cs','reject'],
+  ['cs','oe','return'],
+  ['nl','oe','nl-reject'],
+  ['pp','nl','correction'],
+  ['pp','oe','correction-far'],
+];
+
+function cp(ax,ay,bx,by,style){
+  const mx=(ax+bx)/2,my=(ay+by)/2;
+  if(style==='main')           return{cx:mx,cy:my};
+  if(style==='reject')         return{cx:ax+25,cy:my+15};
+  if(style==='return')         return{cx:bx-55,cy:my-10};
+  if(style==='nl-reject')      return{cx:mx,cy:my-85};
+  if(style==='correction')     return{cx:mx,cy:my-60};
+  if(style==='correction-far') return{cx:mx,cy:my-115};
+  if(style==='informal')       return{cx:ax-65,cy:my};
+  return{cx:mx,cy:my};
+}
+
+function ptOn(ax,ay,bx,by,style,t){
+  const{cx,cy}=cp(ax,ay,bx,by,style);
+  return{x:(1-t)*(1-t)*ax+2*(1-t)*t*cx+t*t*bx,
+         y:(1-t)*(1-t)*ay+2*(1-t)*t*cy+t*t*by};
+}
+
+function edgeColor(style){
+  if(style==='main')return C.move;
+  if(style==='reject'||style==='nl-reject')return C.block;
+  if(style==='return')return C.wait;
+  if(style==='correction'||style==='correction-far')return C.purple;
+  return C.move;
+}
+
+// ── RE-ENTRY LOOP: WC↔Oracle inside OE ───────────────────────────────────────
+// Two sub-nodes rendered inside/around the OE node
+// wcSub = left side, oracleSub = right side
+// re-entry balls bounce between them while an order is stalled at OE
+
+let wcSub={x:0,y:0}, oracleSub={x:0,y:0};
+
+function updateSubNodes(){
+  const oe=NODES.find(n=>n.id==='oe');
+  if(!oe) return;
+  const offset=oe.r*0.62;
+  wcSub    ={x:oe.x-offset, y:oe.y};
+  oracleSub={x:oe.x+offset, y:oe.y};
+}
+
+function spawnReentryBall(){
+  // random number of trips — weighted toward more rather than fewer
+  const trips=2+Math.floor(Math.random()*8); // 2–9 trips
+  reentryBalls.push({
+    trips, tripsDone:0,
+    goingToOracle:true,
+    prog:0, speed:0.025+Math.random()*0.02,
+    sz:2+Math.random()*1.5,
+    active:true,
+  });
+  statReentry+=trips;
+  document.getElementById('s-reentry').textContent=statReentry;
+}
+
+function tickReentry(){
+  reentryBalls.forEach(b=>{
+    if(!b.active) return;
+    b.prog+=b.speed;
+    const from=b.goingToOracle?wcSub:oracleSub;
+    const to  =b.goingToOracle?oracleSub:wcSub;
+    const t=Math.min(b.prog,1);
+    // arc slightly above center line so multiple balls don't overlap
+    const arcOff=(b.goingToOracle?-1:1)*12;
+    const mx=(from.x+to.x)/2, my=(from.y+to.y)/2+arcOff;
+    b.x=(1-t)*(1-t)*from.x+2*(1-t)*t*mx+t*t*to.x;
+    b.y=(1-t)*(1-t)*from.y+2*(1-t)*t*my+t*t*to.y;
+    if(b.prog>=1){
+      b.prog=0;
+      b.goingToOracle=!b.goingToOracle;
+      b.tripsDone++;
+      if(b.tripsDone>=b.trips) b.active=false;
     }
-    window.addEventListener('resize', resizeNet);
-    resizeNet();
+  });
+  reentryBalls=reentryBalls.filter(b=>b.active);
+}
 
-    let pulse = 0;
-    function drawNetwork() {
-      netCtx.clearRect(0, 0, width, height);
-      pulse += 0.035;
+// ── ORDER PATHS ───────────────────────────────────────────────────────────────
+const PATHS=[
+  {w:.24,p:['wc','oe','nl','pp','prod']},
+  {w:.20,p:['wc','oe','cs','oe','nl','pp','prod']},
+  {w:.17,p:['wc','oe','nl','oe','nl','pp','prod']},
+  {w:.13,p:['wc','oe','nl','oe','cs','oe','nl','pp','prod']},
+  {w:.10,p:['wc','oe','cs','oe','cs','oe','nl','pp','prod']},
+  {w:.09,p:['wc','oe','nl','oe','nl','oe','cs','oe','nl','pp','prod']},
+  {w:.07,p:['wc','oe','nl','pp','nl','oe','nl','pp','prod']},
+];
 
-      // Draw Connection Lines (Thick, High Contrast)
-      netCtx.strokeStyle = '#475569';
-      netCtx.lineWidth = 3;
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          netCtx.beginPath();
-          netCtx.moveTo(nodes[i].x * width, nodes[i].y * height);
-          netCtx.lineTo(nodes[j].x * width, nodes[j].y * height);
-          netCtx.stroke();
-        }
+const STALL={
+  wc:  ()=>12+Math.random()*18,
+  oe:  ()=>80+Math.random()*110,
+  cs:  ()=>170+Math.random()*290,
+  nl:  ()=>55+Math.random()*85,
+  pp:  ()=>22+Math.random()*28,
+  prod:()=>18,
+};
+
+function pickPath(){
+  let r=Math.random(),acc=0;
+  for(const p of PATHS){acc+=p.w;if(r<acc)return[...p.p];}
+  return[...PATHS[0].p];
+}
+
+function edgeStyleBetween(a,b){
+  const e=EDGES.find(e=>e[0]===a&&e[1]===b);
+  return e?e[2]:'main';
+}
+
+function spawnBall(){
+  const path=pickPath();
+  const start=NODES.find(n=>n.id===path[0]);
+  balls.push({path,seg:0,prog:0,speed:0.005+Math.random()*0.005,
+    x:start.x,y:start.y,state:'move',stall:0,done:false,sz:2.5+Math.random()*2,
+    spawned:false});
+}
+
+function spawnInformal(){
+  const oe=NODES.find(n=>n.id==='oe'),cs=NODES.find(n=>n.id==='cs');
+  if(!oe||!cs) return;
+  const toCS=Math.random()>0.5;
+  informalPulses.push({
+    ax:toCS?oe.x:cs.x,ay:toCS?oe.y:cs.y,
+    bx:toCS?cs.x:oe.x,by:toCS?cs.y:oe.y,
+    t:0,speed:0.007+Math.random()*0.006,
+  });
+}
+
+function tickBalls(){
+  const counts={move:0,wait:0,block:0};
+  balls.forEach(b=>{
+    if(b.done) return;
+    const cur=NODES.find(n=>n.id===b.path[b.seg]);
+    if(!cur){b.done=true;return;}
+
+    if(b.stall>0){
+      b.stall--;
+      b.state=cur.type;
+      b.x=cur.x+Math.sin(T*2+b.sz)*1.4;
+      b.y=cur.y+Math.cos(T*1.8+b.sz)*1.4;
+      // if stalled at OE, spawn re-entry balls
+      if(cur.id==='oe'&&!b.spawned&&b.stall<STALL.oe()-5){
+        spawnReentryBall();
+        b.spawned=true;
       }
+      if(counts[b.state]!==undefined) counts[b.state]++;
+      return;
+    }
+    b.spawned=false;
+    if(b.seg>=b.path.length-1){b.done=true;statDone++;return;}
+    const nxt=NODES.find(n=>n.id===b.path[b.seg+1]);
+    if(!nxt){b.done=true;return;}
+    b.prog+=b.speed;
+    const style=edgeStyleBetween(b.path[b.seg],b.path[b.seg+1]);
+    const pt=ptOn(cur.x,cur.y,nxt.x,nxt.y,style,Math.min(b.prog,1));
+    b.x=pt.x;b.y=pt.y;b.state=cur.type;
+    if(counts[b.state]!==undefined) counts[b.state]++;
+    if(b.prog>=1){
+      b.seg++;b.prog=0;
+      const nn=NODES.find(n=>n.id===b.path[b.seg]);
+      if(nn&&STALL[nn.id]){b.stall=STALL[nn.id]();b.x=nn.x;b.y=nn.y;}
+      if(b.seg>=b.path.length-1){b.done=true;statDone++;}
+    }
+  });
+  balls=balls.filter(b=>!b.done);
+  informalPulses.forEach(p=>{p.t+=p.speed;});
+  informalPulses=informalPulses.filter(p=>p.t<1);
+  document.getElementById('s-move').textContent=counts.move;
+  document.getElementById('s-wait').textContent=counts.wait;
+  document.getElementById('s-block').textContent=counts.block;
+  document.getElementById('s-done').textContent=statDone;
+}
 
-      // Draw Nodes & Labels
-      nodes.forEach((node, idx) => {
-        const nx = node.x * width;
-        const ny = node.y * height;
-        const pSize = Math.sin(pulse + idx) * 3;
+// ── DRAW ──────────────────────────────────────────────────────────────────────
+function drawEdges(){
+  EDGES.forEach(([fid,tid,style])=>{
+    const f=NODES.find(n=>n.id===fid),t=NODES.find(n=>n.id===tid);
+    if(!f||!t) return;
+    const{cx,cy}=cp(f.x,f.y,t.x,t.y,style);
+    const col=edgeColor(style);
+    const isDash=style!=='main';
+    ctx.beginPath();
+    ctx.moveTo(f.x,f.y);
+    ctx.quadraticCurveTo(cx,cy,t.x,t.y);
+    ctx.strokeStyle=col+'2e';
+    ctx.lineWidth=style==='main'?0.9:0.6;
+    if(isDash) ctx.setLineDash([4,7]);
+    ctx.stroke(); ctx.setLineDash([]);
+    // arrowhead
+    const p1=ptOn(f.x,f.y,t.x,t.y,style,0.87);
+    const p2=ptOn(f.x,f.y,t.x,t.y,style,0.93);
+    const ang=Math.atan2(p2.y-p1.y,p2.x-p1.x);
+    ctx.beginPath();
+    ctx.moveTo(t.x-Math.cos(ang-0.4)*7,t.y-Math.sin(ang-0.4)*7);
+    ctx.lineTo(t.x,t.y);
+    ctx.lineTo(t.x-Math.cos(ang+0.4)*7,t.y-Math.sin(ang+0.4)*7);
+    ctx.strokeStyle=col+'55';ctx.lineWidth=0.8;ctx.stroke();
+  });
 
-        // Node Glow Ring
-        netCtx.strokeStyle = '#f59e0b';
-        netCtx.lineWidth = 3;
-        netCtx.beginPath();
-        netCtx.arc(nx, ny, node.r + pSize + 4, 0, Math.PI * 2);
-        netCtx.stroke();
+  // Informal OE↔CS channel
+  const oe=NODES.find(n=>n.id==='oe'),cs=NODES.find(n=>n.id==='cs');
+  if(oe&&cs){
+    const{cx,cy}=cp(oe.x,oe.y,cs.x,cs.y,'informal');
+    ctx.beginPath();ctx.moveTo(oe.x,oe.y);ctx.quadraticCurveTo(cx,cy,cs.x,cs.y);
+    ctx.strokeStyle=C.teams+'25';ctx.lineWidth=0.6;ctx.setLineDash([3,9]);ctx.stroke();ctx.setLineDash([]);
+    const mid=ptOn(oe.x,oe.y,cs.x,cs.y,'informal',0.5);
+    ctx.font='9px Geist Mono,monospace';ctx.textAlign='center';
+    ctx.fillStyle=C.teams+'44';ctx.fillText('Teams / in-person',mid.x-18,mid.y-4);
+  }
+}
 
-        // Solid Node Core
-        netCtx.fillStyle = '#ffffff';
-        netCtx.beginPath();
-        netCtx.arc(nx, ny, node.r + pSize, 0, Math.PI * 2);
-        netCtx.fill();
+function drawReentryLoop(){
+  const oe=NODES.find(n=>n.id==='oe');
+  if(!oe) return;
 
-        // Node Label (Bolder, Larger Text)
-        netCtx.font = 'bold 14px ui-monospace, monospace';
-        netCtx.fillStyle = '#f8fafc';
-        netCtx.textAlign = 'center';
-        netCtx.fillText(node.label, nx, ny + node.r + 24);
+  // draw the two sub-nodes
+  const subR=oe.r*0.28;
+  const pulse=Math.sin(T*2)*0.5+0.5;
+
+  // arc between them — draw both directions
+  [-1,1].forEach(dir=>{
+    const from=dir>0?wcSub:oracleSub;
+    const to  =dir>0?oracleSub:wcSub;
+    const arcOff=dir*13;
+    const mx=(from.x+to.x)/2, my=(from.y+to.y)/2+arcOff;
+    ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.quadraticCurveTo(mx,my,to.x,to.y);
+    ctx.strokeStyle=C.reentry+'30';ctx.lineWidth=0.7;ctx.setLineDash([3,6]);ctx.stroke();ctx.setLineDash([]);
+  });
+
+  // WC sub-node
+  ctx.beginPath();ctx.arc(wcSub.x,wcSub.y,subR+2+pulse*2,0,Math.PI*2);
+  ctx.strokeStyle=C.move+'22';ctx.lineWidth=0.5;ctx.stroke();
+  ctx.beginPath();ctx.arc(wcSub.x,wcSub.y,subR,0,Math.PI*2);
+  ctx.fillStyle=C.move+'22';ctx.fill();
+  ctx.strokeStyle=C.move+'60';ctx.lineWidth=0.8;ctx.stroke();
+  ctx.font='8px Geist Mono,monospace';ctx.textAlign='center';
+  ctx.fillStyle=C.move+'88';ctx.fillText('WC',wcSub.x,wcSub.y+3);
+
+  // Oracle sub-node
+  ctx.beginPath();ctx.arc(oracleSub.x,oracleSub.y,subR+2+pulse*2,0,Math.PI*2);
+  ctx.strokeStyle=C.block+'22';ctx.lineWidth=0.5;ctx.stroke();
+  ctx.beginPath();ctx.arc(oracleSub.x,oracleSub.y,subR,0,Math.PI*2);
+  ctx.fillStyle=C.block+'22';ctx.fill();
+  ctx.strokeStyle=C.block+'60';ctx.lineWidth=0.8;ctx.stroke();
+  ctx.font='8px Geist Mono,monospace';ctx.textAlign='center';
+  ctx.fillStyle=C.block+'88';ctx.fillText('ORA',oracleSub.x,oracleSub.y+3);
+
+  // re-entry balls
+  reentryBalls.forEach(b=>{
+    if(!b.x) return;
+    ctx.beginPath();ctx.arc(b.x,b.y,b.sz+3,0,Math.PI*2);
+    ctx.fillStyle=C.reentry+'1a';ctx.fill();
+    ctx.beginPath();ctx.arc(b.x,b.y,b.sz,0,Math.PI*2);
+    ctx.fillStyle=C.reentry+'cc';ctx.fill();
+  });
+}
+
+function drawNodes(){
+  NODES.forEach(n=>{
+    const isHov=hovered&&hovered.id===n.id;
+    const col=C[n.type]||C.move;
+    const pulse=Math.sin(T*1.1+n.fx*7)*0.5+0.5;
+    const r=n.r;
+    if(isHov){ctx.beginPath();ctx.arc(n.x,n.y,r+24,0,Math.PI*2);ctx.fillStyle=col+'12';ctx.fill();}
+    ctx.beginPath();ctx.arc(n.x,n.y,r+5+pulse*5,0,Math.PI*2);
+    ctx.strokeStyle=col+(isHov?'50':'18');ctx.lineWidth=isHov?1:0.5;ctx.stroke();
+    ctx.beginPath();ctx.arc(n.x,n.y,r,0,Math.PI*2);
+    ctx.fillStyle=col+Math.round(18+pulse*14).toString(16).padStart(2,'0');ctx.fill();
+    ctx.strokeStyle=col+(isHov?'cc':'50');ctx.lineWidth=isHov?1.5:0.8;ctx.stroke();
+    // system label
+    const fsz=Math.max(8,Math.round(r*0.24));
+    ctx.font=fsz+'px Geist Mono,monospace';ctx.textAlign='center';ctx.fillStyle=col+'70';
+    if(n.id==='cs'){
+      ctx.fillText('Oracle·Zendesk',n.x,n.y-r*0.2);
+      ctx.font=Math.max(7,fsz-1)+'px Geist Mono,monospace';
+      ctx.fillText('Wrike·Teams',n.x,n.y+r*0.22);
+    } else if(n.id==='oe'){
+      // just show the re-entry label above, not the system labels — those are the sub-nodes
+
+    }
+    // node name
+    const lsz=Math.max(10,Math.round(r*0.28));
+    ctx.font=lsz+'px Instrument Serif,serif';
+    ctx.fillStyle=isHov?'rgba(228,223,214,0.9)':'rgba(228,223,214,0.46)';
+    ctx.fillText(n.label,n.x,n.y+r+lsz*1.15);
+    // friction dot
+    if(n.friction){ctx.beginPath();ctx.arc(n.x+r*0.7,n.y-r*0.7,3.5,0,Math.PI*2);ctx.fillStyle='#c85040dd';ctx.fill();}
+  });
+}
+
+function drawBalls(){
+  balls.forEach(b=>{
+    if(!b.x||b.done) return;
+    const col=C[b.state]||C.move;
+    ctx.beginPath();ctx.arc(b.x,b.y,b.sz+4,0,Math.PI*2);ctx.fillStyle=col+'1a';ctx.fill();
+    ctx.beginPath();ctx.arc(b.x,b.y,b.sz,0,Math.PI*2);ctx.fillStyle=col+'cc';ctx.fill();
+  });
+}
+
+function drawInformal(){
+  informalPulses.forEach(p=>{
+    const{cx,cy}=cp(p.ax,p.ay,p.bx,p.by,'informal');
+    const t=p.t;
+    const x=(1-t)*(1-t)*p.ax+2*(1-t)*t*cx+t*t*p.bx;
+    const y=(1-t)*(1-t)*p.ay+2*(1-t)*t*cy+t*t*p.by;
+    ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);
+    ctx.fillStyle=C.teams+'aa';ctx.fill();
+  });
+}
+
+// ── TOOLTIP ───────────────────────────────────────────────────────────────────
+canvas.addEventListener('mousemove',e=>{
+  let best=null,bd=Infinity;
+  NODES.forEach(n=>{const d=Math.hypot(e.clientX-n.x,e.clientY-n.y);if(d<n.r+22&&d<bd){bd=d;best=n;}});
+  hovered=best;
+  if(best){
+    const col=C[best.type];
+    document.getElementById('tt-name').textContent=best.label;
+    document.getElementById('tt-name').style.color=col;
+    document.getElementById('tt-owner').textContent=best.owner;
+    document.getElementById('tt-owner').style.color=col+'99';
+    const te=document.getElementById('tt-tags');te.innerHTML='';
+    best.tags.forEach(t=>{const s=document.createElement('span');s.className='tt-tag';s.textContent=t.n;s.style.color=t.c;s.style.borderColor=t.c+'55';te.appendChild(s);});
+    document.getElementById('tt-body').textContent=best.body;
+    const oe=document.getElementById('tt-oracle');oe.textContent=best.oracle||'';oe.style.display=best.oracle?'block':'none';
+    const fe=document.getElementById('tt-friction');fe.textContent=best.friction||'';fe.style.display=best.friction?'block':'none';
+    tooltip.style.opacity='1';
+    tooltip.style.left=Math.min(e.clientX+22,W-310)+'px';
+    tooltip.style.top=Math.max(20,e.clientY-16)+'px';
+  } else tooltip.style.opacity='0';
+});
+canvas.addEventListener('mouseleave',()=>{hovered=null;tooltip.style.opacity='0';});
+
+function resize(){
+  const dpr=devicePixelRatio||1;
+  W=window.innerWidth;H=window.innerHeight;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.scale(dpr,dpr);
+  const base=Math.min(W,H)*0.048;
+  NODES.forEach(n=>{n.x=n.fx*W;n.y=n.fy*H;n.r=base*n.sz;});
+  updateSubNodes();
+}
+
+function frame(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(228,223,214,0.02)';ctx.lineWidth=0.5;
+  for(let x=0;x<W;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  drawEdges();
+  tickBalls();
+  tickReentry();
+  drawReentryLoop();
+  drawBalls();
+  drawInformal();
+  drawNodes();
+  if(Math.random()<0.02&&balls.length<30) spawnBall();
+  if(Math.random()<0.025&&informalPulses.length<8) spawnInformal();
+  T+=0.016;
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener('resize',()=>{resize();});
+resize();
+for(let i=0;i<10;i++) setTimeout(spawnBall,i*320);
+for(let i=0;i<3;i++) setTimeout(spawnInformal,i*700+500);
+frame();
+</script>
+
+<div id="kw-toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);background:#c9a84c;color:#0d0a07;padding:8px 18px;border-radius:2px;font-size:11px;letter-spacing:.15em;text-transform:uppercase;opacity:0;transition:all .28s;pointer-events:none;z-index:9999;white-space:nowrap">Copied!</div>
+<script>
+(function(){
+  function kwShare(){
+    var url="https://kellis-web.com/signal-noise/",title="Signal & Noise — Herff Jones Order Flow",text="A live visualization of the Herff Jones order entry workflow.\n\n"+url;
+    if(navigator.share){
+      navigator.share({title:title,text:text,url:url}).catch(function(){});
+    }else{
+      navigator.clipboard.writeText(url).then(function(){
+        var t=document.getElementById('kw-toast');
+        t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';
+        setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(-50%) translateY(16px)';},2200);
       });
-
-      requestAnimationFrame(drawNetwork);
     }
-    drawNetwork();
-
-    // 2. High-Contrast Flow Simulator Canvas
-    const flowCanvas = document.getElementById('flowCanvas');
-    const flowCtx = flowCanvas.getContext('2d');
-    let fWidth = flowCanvas.width = flowCanvas.parentElement.clientWidth;
-    let fHeight = flowCanvas.height = 220;
-
-    window.addEventListener('resize', () => {
-      fWidth = flowCanvas.width = flowCanvas.parentElement.clientWidth;
-    });
-
-    const stages = [
-      { name: 'Originator', x: 0.1 },
-      { name: 'Coordination', x: 0.3 },
-      { name: 'System Core', x: 0.5 },
-      { name: 'Decision', x: 0.7 },
-      { name: 'Action', x: 0.9 }
-    ];
-
-    let packets = [];
-    function spawnPacket() {
-      packets.push({ x: 0.1, speed: 0.004 + Math.random() * 0.002 });
-    }
-    setInterval(spawnPacket, 1200);
-
-    function drawFlow() {
-      flowCtx.clearRect(0, 0, fWidth, fHeight);
-
-      // High-Contrast Pipeline Line
-      flowCtx.strokeStyle = '#64748b';
-      flowCtx.lineWidth = 4;
-      flowCtx.beginPath();
-      flowCtx.moveTo(0.1 * fWidth, fHeight / 2);
-      flowCtx.lineTo(0.9 * fWidth, fHeight / 2);
-      flowCtx.stroke();
-
-      // Stages
-      stages.forEach((stg) => {
-        const sx = stg.x * fWidth;
-
-        // Stage Circle
-        flowCtx.fillStyle = '#1e293b';
-        flowCtx.strokeStyle = '#38bdf8';
-        flowCtx.lineWidth = 3;
-        flowCtx.beginPath();
-        flowCtx.arc(sx, fHeight / 2, 12, 0, Math.PI * 2);
-        flowCtx.fill();
-        flowCtx.stroke();
-
-        // Stage Labels
-        flowCtx.font = 'bold 13px ui-monospace, monospace';
-        flowCtx.fillStyle = '#f8fafc';
-        flowCtx.textAlign = 'center';
-        flowCtx.fillText(stg.name, sx, fHeight / 2 + 32);
-      });
-
-      // Moving Data Packets (Larger, Glowing Green)
-      for (let i = packets.length - 1; i >= 0; i--) {
-        let p = packets[i];
-        let currentSpeed = p.speed;
-        
-        // System Core Latency
-        if (p.x > 0.45 && p.x < 0.55) {
-          currentSpeed *= 0.35;
-        }
-
-        p.x += currentSpeed;
-
-        flowCtx.fillStyle = '#4ade80';
-        flowCtx.strokeStyle = '#ffffff';
-        flowCtx.lineWidth = 2;
-        flowCtx.beginPath();
-        flowCtx.arc(p.x * fWidth, fHeight / 2, 7, 0, Math.PI * 2);
-        flowCtx.fill();
-        flowCtx.stroke();
-
-        if (p.x >= 0.9) {
-          packets.splice(i, 1);
-        }
-      }
-
-      requestAnimationFrame(drawFlow);
-    }
-    drawFlow();
-
-    function highlightSystem(sys) {
-      console.log('Active System: ' + sys);
-    }
-  </script>
+  }
+  document.querySelectorAll('.kw-share-btn').forEach(function(b){b.addEventListener('click',kwShare);});
+})();
+</script>
 </body>
 </html>
