@@ -16,7 +16,6 @@
       --border-line: #1e293b;
       --border-accent: #334155;
 
-      /* High-Contrast Telemetry Accents */
       --color-order: #38bdf8;
       --color-cs: #fbbf24;
       --color-oracle: #f87171;
@@ -128,7 +127,7 @@
       border-top: 2px dashed;
     }
 
-    /* Fullscreen Viewport */
+    /* Canvas Viewport */
     .canvas-viewport {
       flex: 1;
       position: relative;
@@ -145,7 +144,7 @@
       display: block;
     }
 
-    /* Hover Inspection HUD Card */
+    /* Inspection HUD Tooltip */
     #inspectHUD {
       position: absolute;
       pointer-events: none;
@@ -157,7 +156,7 @@
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8), 0 0 15px rgba(56, 189, 248, 0.15);
       border-radius: 4px;
       padding: 1rem 1.25rem;
-      min-width: 260px;
+      min-width: 270px;
       max-width: 320px;
       z-index: 50;
     }
@@ -184,7 +183,7 @@
     }
     .hud-desc {
       font-size: 0.78rem;
-      font-family: var(--font-sans, sans-serif);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: #cbd5e1;
       line-height: 1.45;
       border-top: 1px solid var(--border-line);
@@ -254,7 +253,6 @@
 </head>
 <body>
 
-  <!-- Header & Legend -->
   <header>
     <div class="brand-group">
       <h1 class="site-title">Signal &amp; Noise</h1>
@@ -293,35 +291,32 @@
     <button class="share-btn" onclick="navigator.clipboard.writeText(window.location.href); alert('Link copied to clipboard');">Share &uarr;</button>
   </header>
 
-  <!-- Interactive Network Simulation -->
   <main class="canvas-viewport" id="viewport">
     <canvas id="flowCanvas"></canvas>
     
-    <!-- Floating Inspector HUD -->
     <div id="inspectHUD">
       <div class="hud-title" id="hudTitle">Order Entry</div>
       <div class="hud-tag" id="hudTag" style="color: var(--color-oracle);">Oracle Relational Validation</div>
-      <div class="hud-desc" id="hudDesc">Core validation node where order schema mismatches cause immediate operational latency.</div>
-      <div class="hud-stat" id="hudStat">LATENCY TAX: +4.2 hrs / order</div>
+      <div class="hud-desc" id="hudDesc">Manual operator bridge between WebCenter and Oracle ERP. High cognitive load and repetitive data re-keying.</div>
+      <div class="hud-stat" id="hudStat">RE-ENTRY RATE: 34.2% REJECTED</div>
     </div>
   </main>
 
-  <!-- Bottom Diagnostic Telemetry -->
   <footer>
     <div class="metric-cell">
-      <div class="metric-val" id="valInTransit">3</div>
+      <div class="metric-val" id="valInTransit">0</div>
       <div class="metric-lbl">In Transit</div>
     </div>
     <div class="metric-cell">
-      <div class="metric-val" id="valReentry">131</div>
+      <div class="metric-val" id="valReentry">0</div>
       <div class="metric-lbl">WC&harr;Oracle Trips</div>
     </div>
     <div class="metric-cell">
-      <div class="metric-val" id="valCsHold">13</div>
+      <div class="metric-val" id="valCsHold">0</div>
       <div class="metric-lbl">CS Hold</div>
     </div>
     <div class="metric-cell">
-      <div class="metric-val" id="valOracleError">11</div>
+      <div class="metric-val" id="valOracleError">0</div>
       <div class="metric-lbl">Oracle Error</div>
     </div>
     <div class="metric-cell">
@@ -331,7 +326,7 @@
     <div class="footer-actions">
       <a href="../index.html">&larr; Cabinet</a>
       <span style="color: var(--border-accent);">&middot;</span>
-      <a href="#" onclick="location.reload(); return false;">Reset</a>
+      <a href="#" onclick="resetTelemetry(); return false;">Reset</a>
     </div>
   </footer>
 
@@ -345,6 +340,26 @@
     const hudDesc = document.getElementById('hudDesc');
     const hudStat = document.getElementById('hudStat');
 
+    // Telemetry DOM elements
+    const elInTransit = document.getElementById('valInTransit');
+    const elReentry = document.getElementById('valReentry');
+    const elCsHold = document.getElementById('valCsHold');
+    const elOracleError = document.getElementById('valOracleError');
+    const elToProd = document.getElementById('valToProd');
+
+    let totalReentryTrips = 131;
+    let totalCsHolds = 13;
+    let totalOracleErrors = 11;
+    let totalToProd = 0;
+
+    function resetTelemetry() {
+      totalReentryTrips = 0;
+      totalCsHolds = 0;
+      totalOracleErrors = 0;
+      totalToProd = 0;
+      packets = [];
+    }
+
     let width, height;
     let hoveredNode = null;
     let mousePos = { x: -100, y: -100 };
@@ -356,7 +371,6 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // Node Definitions with Diagnostic Copy
     function getNodes() {
       const cy = height * 0.44;
       return {
@@ -418,7 +432,6 @@
       };
     }
 
-    // Mouse Tracking for Inspection Overlay
     viewport.addEventListener('mousemove', (e) => {
       const rect = canvas.getBoundingClientRect();
       mousePos.x = e.clientX - rect.left;
@@ -443,8 +456,6 @@
         hudTag.style.color = hoveredNode.color;
         hudDesc.textContent = hoveredNode.desc;
         hudStat.textContent = hoveredNode.stat;
-
-        // Position HUD
         hud.style.left = `${hoveredNode.x}px`;
         hud.style.top = `${hoveredNode.y - hoveredNode.r - 10}px`;
       } else {
@@ -457,31 +468,194 @@
       hud.classList.remove('active');
     });
 
-    // Dynamic Packets
+    // --- State-Machine Order Simulation Engine ---
     let packets = [];
-    const packetTypes = ['order', 'reentry', 'oracle', 'cs'];
 
-    function spawnPacket() {
-      const type = packetTypes[Math.floor(Math.random() * packetTypes.length)];
-      packets.push({
-        type: type,
-        progress: 0,
-        speed: 0.0018 + Math.random() * 0.0014,
-        loopCount: 0
-      });
+    class OrderPacket {
+      constructor() {
+        this.x = 0;
+        this.y = 0;
+        this.color = '#38bdf8';
+        this.state = 'WC_TO_OE';
+        this.t = 0;
+        this.speed = 0.0035 + Math.random() * 0.002;
+        this.oeTrips = 0;
+        this.targetTrips = Math.floor(Math.random() * 5) + 2; // 2 to 6 internal bounce trips
+        this.oeWaitTimer = 0;
+        this.nlRejected = false;
+        
+        // Probabilities
+        const rand = Math.random();
+        if (rand < 0.45) {
+          this.routeType = 'CLEAN';
+        } else if (rand < 0.75) {
+          this.routeType = 'REENTRY_TAX';
+        } else if (rand < 0.90) {
+          this.routeType = 'CS_HOLD';
+        } else {
+          this.routeType = 'NL_REJECT';
+        }
+      }
+
+      update(N) {
+        this.t += this.speed;
+
+        switch (this.state) {
+          case 'WC_TO_OE':
+            this.color = '#38bdf8';
+            this.x = N.wcQueue.x + (N.orderEntry.x - N.wcQueue.x) * this.t;
+            this.y = N.wcQueue.y;
+            if (this.t >= 1) {
+              this.t = 0;
+              if (this.routeType === 'REENTRY_TAX') {
+                this.state = 'OE_BOUNCE_WC_TO_ORA';
+              } else if (this.routeType === 'CS_HOLD') {
+                this.state = 'OE_TO_CS';
+                totalCsHolds++;
+              } else {
+                this.state = 'OE_TO_NL';
+              }
+            }
+            break;
+
+          case 'OE_BOUNCE_WC_TO_ORA':
+            this.color = '#eab308';
+            const wcX = N.orderEntry.x - 16;
+            const oraX = N.orderEntry.x + 16;
+            this.x = wcX + (oraX - wcX) * this.t;
+            this.y = N.orderEntry.y - Math.sin(this.t * Math.PI) * 10;
+            if (this.t >= 1) {
+              this.t = 0;
+              this.oeTrips++;
+              totalReentryTrips++;
+              this.state = 'OE_BOUNCE_ORA_TO_WC';
+            }
+            break;
+
+          case 'OE_BOUNCE_ORA_TO_WC':
+            this.color = '#f87171';
+            const oX = N.orderEntry.x + 16;
+            const wX = N.orderEntry.x - 16;
+            this.x = oX + (wX - oX) * this.t;
+            this.y = N.orderEntry.y + Math.sin(this.t * Math.PI) * 10;
+            if (this.t >= 1) {
+              this.t = 0;
+              this.oeTrips++;
+              totalReentryTrips++;
+              if (this.oeTrips >= this.targetTrips) {
+                this.state = 'OE_TO_NL';
+              } else {
+                this.state = 'OE_BOUNCE_WC_TO_ORA';
+              }
+            }
+            break;
+
+          case 'OE_TO_CS':
+            // Downward curved path to CS Hold (Teams/In-person backchannel)
+            this.color = '#60a5fa';
+            const cp1 = { x: N.orderEntry.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 };
+            const cp2 = { x: N.csHold.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 };
+            const ptDown = getBezierPoint(this.t, N.orderEntry, cp1, cp2, N.csHold);
+            this.x = ptDown.x;
+            this.y = ptDown.y;
+            if (this.t >= 1) {
+              this.t = 0;
+              this.state = 'CS_HOLD_STALL';
+              this.oeWaitTimer = Math.floor(Math.random() * 80) + 40;
+            }
+            break;
+
+          case 'CS_HOLD_STALL':
+            this.color = '#fbbf24';
+            this.x = N.csHold.x + Math.sin(this.oeWaitTimer * 0.1) * 8;
+            this.y = N.csHold.y + Math.cos(this.oeWaitTimer * 0.1) * 8;
+            this.oeWaitTimer--;
+            if (this.oeWaitTimer <= 0) {
+              this.t = 0;
+              this.state = 'CS_TO_OE_REJECT';
+              totalOracleErrors++;
+            }
+            break;
+
+          case 'CS_TO_OE_REJECT':
+            // Upward formal reject loop
+            this.color = '#ef4444';
+            const cpU1 = { x: N.csHold.x + 45, y: (N.orderEntry.y + N.csHold.y) / 2 };
+            const cpU2 = { x: N.orderEntry.x + 45, y: (N.orderEntry.y + N.csHold.y) / 2 };
+            const ptUp = getBezierPoint(this.t, N.csHold, cpU1, cpU2, N.orderEntry);
+            this.x = ptUp.x;
+            this.y = ptUp.y;
+            if (this.t >= 1) {
+              this.t = 0;
+              this.routeType = 'CLEAN'; // Resolved
+              this.state = 'OE_TO_NL';
+            }
+            break;
+
+          case 'OE_TO_NL':
+            this.color = '#38bdf8';
+            this.x = N.orderEntry.x + (N.namelist.x - N.orderEntry.x) * this.t;
+            this.y = N.orderEntry.y;
+            if (this.t >= 1) {
+              this.t = 0;
+              if (this.routeType === 'NL_REJECT' && !this.nlRejected) {
+                this.state = 'NL_REJECT_TO_OE';
+                this.nlRejected = true;
+              } else {
+                this.state = 'NL_TO_PREPRESS';
+              }
+            }
+            break;
+
+          case 'NL_REJECT_TO_OE':
+            // Backward arc over top
+            this.color = '#eab308';
+            const nlCp1 = { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 90 };
+            const ptNl = getBezierPoint(this.t, N.namelist, nlCp1, nlCp1, N.orderEntry);
+            this.x = ptNl.x;
+            this.y = ptNl.y;
+            if (this.t >= 1) {
+              this.t = 0;
+              this.state = 'OE_BOUNCE_WC_TO_ORA';
+              this.oeTrips = 0;
+              this.targetTrips = 2;
+            }
+            break;
+
+          case 'NL_TO_PREPRESS':
+            this.color = '#38bdf8';
+            this.x = N.namelist.x + (N.prepress.x - N.namelist.x) * this.t;
+            this.y = N.namelist.y;
+            if (this.t >= 1) {
+              this.t = 0;
+              this.state = 'PREPRESS_TO_PROD';
+            }
+            break;
+
+          case 'PREPRESS_TO_PROD':
+            this.color = '#34d399';
+            this.x = N.prepress.x + (N.production.x - N.prepress.x) * this.t;
+            this.y = N.prepress.y;
+            if (this.t >= 1) {
+              this.state = 'DONE';
+              totalToProd++;
+            }
+            break;
+        }
+      }
     }
 
-    for (let i = 0; i < 18; i++) {
-      packets.push({
-        type: packetTypes[Math.floor(Math.random() * packetTypes.length)],
-        progress: Math.random(),
-        speed: 0.0018 + Math.random() * 0.0014,
-        loopCount: 0
-      });
+    function spawnOrder() {
+      if (packets.length < 24) {
+        packets.push(new OrderPacket());
+      }
     }
-    setInterval(spawnPacket, 1100);
-
-    let tick = 0;
+    for (let i = 0; i < 14; i++) {
+      const p = new OrderPacket();
+      p.t = Math.random();
+      packets.push(p);
+    }
+    setInterval(spawnOrder, 950);
 
     function drawDashedCurve(p1, p2, cp1, cp2, color, width = 1.5) {
       ctx.save();
@@ -515,11 +689,16 @@
 
     function animate() {
       ctx.clearRect(0, 0, width, height);
-      tick += 0.02;
       const N = getNodes();
 
-      // --- 1. Pipeline Spine & Routing Arcs ---
-      // Main Spine (High-Contrast Slate)
+      // Telemetry Live Sync
+      elInTransit.textContent = packets.length;
+      elReentry.textContent = totalReentryTrips;
+      elCsHold.textContent = totalCsHolds;
+      elOracleError.textContent = totalOracleErrors;
+      elToProd.textContent = totalToProd;
+
+      // 1. Spine Track
       ctx.strokeStyle = '#334155';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
@@ -527,7 +706,7 @@
       ctx.lineTo(N.production.x, N.production.y);
       ctx.stroke();
 
-      // Teams / In-Person Backchannel (OE <-> CS Hold Left Loop)
+      // 2. Routing Loops
       drawDashedCurve(
         N.orderEntry, N.csHold,
         { x: N.orderEntry.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 },
@@ -535,7 +714,6 @@
         '#60a5fa', 2
       );
 
-      // Formal Rejection Loop (OE <-> CS Hold Right Loop)
       drawDashedCurve(
         N.csHold, N.orderEntry,
         { x: N.csHold.x + 45, y: (N.orderEntry.y + N.csHold.y) / 2 },
@@ -543,7 +721,6 @@
         '#ef4444', 2
       );
 
-      // Re-entry Arc (Namelist -> Order Entry)
       drawDashedCurve(
         N.namelist, N.orderEntry,
         { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 90 },
@@ -551,7 +728,6 @@
         '#64748b', 1.5
       );
 
-      // Prepress Re-entry Arc (Prepress -> Order Entry)
       drawDashedCurve(
         N.prepress, N.orderEntry,
         { x: (N.prepress.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 130 },
@@ -559,11 +735,10 @@
         '#475569', 1.5
       );
 
-      // --- 2. Render System Nodes ---
+      // 3. Render Nodes
       Object.values(N).forEach(node => {
         const isHovered = (hoveredNode && hoveredNode.id === node.id);
 
-        // Outer Translucent Zone
         ctx.fillStyle = node.color + (isHovered ? '25' : '12');
         ctx.strokeStyle = node.color + (isHovered ? 'aa' : '50');
         ctx.lineWidth = isHovered ? 2.5 : 1.5;
@@ -572,7 +747,6 @@
         ctx.fill();
         ctx.stroke();
 
-        // Inner Core Ring
         ctx.fillStyle = '#07090e';
         ctx.strokeStyle = isHovered ? '#ffffff' : node.color;
         ctx.lineWidth = 2;
@@ -581,9 +755,7 @@
         ctx.fill();
         ctx.stroke();
 
-        // Sub-nodes inside Order Entry (WC & ORA)
         if (node.id === 'orderEntry') {
-          // Left Subnode: WC
           ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
           ctx.strokeStyle = '#38bdf8';
           ctx.lineWidth = 1.5;
@@ -595,7 +767,6 @@
           ctx.textAlign = 'center';
           ctx.fillText('WC', node.x - 16, node.y + 3);
 
-          // Right Subnode: ORA
           ctx.fillStyle = 'rgba(248, 113, 113, 0.2)';
           ctx.strokeStyle = '#f87171';
           ctx.beginPath();
@@ -605,7 +776,6 @@
           ctx.fillText('ORA', node.x + 16, node.y + 3);
         }
 
-        // Labels
         ctx.font = '600 13px "JetBrains Mono", monospace';
         ctx.fillStyle = isHovered ? '#ffffff' : '#e2e8f0';
         ctx.textAlign = 'center';
@@ -618,64 +788,25 @@
         }
       });
 
-      // Teams in-person text tag
       ctx.font = '600 11px "JetBrains Mono", monospace';
       ctx.fillStyle = '#60a5fa';
       ctx.textAlign = 'right';
       ctx.fillText('Teams / in-person', N.orderEntry.x - 65, (N.orderEntry.y + N.csHold.y) / 2);
 
-      // --- 3. Dynamic Moving Packets ---
+      // 4. Update & Render Simulated Packets
       for (let i = packets.length - 1; i >= 0; i--) {
         const p = packets[i];
-        p.progress += p.speed;
+        p.update(N);
 
-        let px, py, color;
-
-        if (p.type === 'order') {
-          // Linear main progression
-          color = '#38bdf8';
-          px = N.wcQueue.x + (N.production.x - N.wcQueue.x) * p.progress;
-          py = N.wcQueue.y;
-        } else if (p.type === 'cs') {
-          // OE -> CS Hold -> OE loop
-          color = '#fbbf24';
-          const p0 = N.orderEntry, p3 = N.csHold;
-          const cp1 = { x: N.orderEntry.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 };
-          const cp2 = { x: N.csHold.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 };
-
-          if (p.progress <= 0.5) {
-            const pt = getBezierPoint(p.progress * 2, p0, cp1, cp2, p3);
-            px = pt.x; py = pt.y;
-          } else {
-            color = '#ef4444';
-            const pt = getBezierPoint((p.progress - 0.5) * 2, p3, cp2, cp1, p0);
-            px = pt.x; py = pt.y;
-          }
-        } else if (p.type === 'reentry') {
-          // Namelist -> Order Entry Top Arc
-          color = '#eab308';
-          const p0 = N.namelist, p3 = N.orderEntry;
-          const cp1 = { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 90 };
-          const pt = getBezierPoint(p.progress, p0, cp1, cp1, p3);
-          px = pt.x; py = pt.y;
-        } else {
-          // Oracle internal cluster stall
-          color = '#f87171';
-          const angle = tick * 2 + i;
-          px = N.orderEntry.x + Math.cos(angle) * (18 + (i % 8));
-          py = N.orderEntry.y + Math.sin(angle) * (18 + (i % 8));
-        }
-
-        // Draw High-Contrast Glowing Packet
-        ctx.fillStyle = color;
-        ctx.shadowColor = color;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
         ctx.shadowBlur = 8;
         ctx.beginPath();
-        ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0; // reset
+        ctx.shadowBlur = 0;
 
-        if (p.progress >= 1) {
+        if (p.state === 'DONE') {
           packets.splice(i, 1);
         }
       }
