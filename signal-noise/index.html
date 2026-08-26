@@ -1,518 +1,491 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%0A%20%20%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%224%22%20fill%3D%22%230e0b06%22/%3E%0A%20%20%3Ctext%20x%3D%2216%22%20y%3D%2222%22%20font-family%3D%22serif%22%20font-size%3D%2216%22%20fill%3D%22%23c9a84c%22%20text-anchor%3D%22middle%22%3E%E2%8A%95%3C/text%3E%0A%3C/svg%3E">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Signal & Noise — Herff Jones Order Flow</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#08090f;--fg:#e4dfd6;--dim:rgba(228,223,214,0.28);
-  --move:#4a8faa;--wait:#c8922a;--block:#c85040;--done:#5a9a6a;--purple:#8060b0;--teams:#4a6aaa;
-  --serif:'Instrument Serif',Georgia,serif;--mono:'Geist Mono',monospace;
-}
-html,body{width:100%;height:100%;background:var(--bg);color:var(--fg);font-family:var(--mono);overflow:hidden}
-canvas{position:absolute;inset:0;width:100%;height:100%}
-#header{position:fixed;top:0;left:0;right:0;padding:20px 36px 0;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;z-index:10}
-#title h1{font-family:var(--serif);font-size:20px;font-weight:400;line-height:1.1}
-#title h1 em{font-style:italic;opacity:0.45}
-#title p{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-top:4px}
-#legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-.leg{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:0.09em;text-transform:uppercase;color:var(--dim)}
-.leg-pip{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.leg-dash{width:18px;height:0;border-top:1px dashed;flex-shrink:0}
-#stats{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;border-top:1px solid rgba(228,223,214,0.07);pointer-events:none;z-index:10;background:rgba(8,9,15,0.8)}
-.stat{padding:11px 22px;text-align:center;border-right:1px solid rgba(228,223,214,0.07)}
-.stat:last-child{border-right:none}
-.stat-n{font-family:var(--serif);font-size:20px;font-style:italic}
-.stat-l{font-size:9px;letter-spacing:0.11em;text-transform:uppercase;color:var(--dim);margin-top:1px}
-#tooltip{position:fixed;pointer-events:none;z-index:20;background:rgba(6,7,14,0.97);border:1px solid rgba(228,223,214,0.12);padding:15px 19px;border-radius:3px;opacity:0;transition:opacity 0.15s;max-width:295px}
-.tt-name{font-family:var(--serif);font-size:17px;font-style:italic;margin-bottom:4px}
-.tt-owner{font-size:10px;letter-spacing:0.11em;text-transform:uppercase;margin-bottom:8px}
-.tt-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
-.tt-tag{font-size:9px;letter-spacing:0.08em;text-transform:uppercase;padding:3px 7px;border-radius:2px;border:1px solid;opacity:0.75}
-.tt-body{font-size:11px;line-height:1.68;color:var(--dim)}
-.tt-oracle{font-size:10px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(228,223,214,0.08);color:var(--wait);line-height:1.55}
-.tt-friction{font-size:10px;margin-top:7px;color:var(--block);line-height:1.55}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signal & Noise — Herff Jones Order Entry Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090e;
+      --text-bright: #ffffff;
+      --text-main: #e2e8f0;
+      --text-dim: #94a3b8;
+      --border-line: #1e293b;
+      --border-accent: #334155;
+
+      /* High-Contrast Telemetry Accents */
+      --color-order: #38bdf8;
+      --color-cs: #fbbf24;
+      --color-oracle: #f87171;
+      --color-reentry: #eab308;
+      --color-teams: #60a5fa;
+      --color-reject: #ef4444;
+      --color-action: #34d399;
+
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html {
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      user-select: none;
+    }
+
+    /* Top Telemetry Header */
+    header {
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-line);
+      z-index: 10;
+    }
+    .brand-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .site-title {
+      font-family: var(--font-serif);
+      font-size: 1.75rem;
+      font-weight: 400;
+      color: var(--text-bright);
+      letter-spacing: -0.01em;
+    }
+    .site-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .share-btn {
+      background: transparent;
+      border: 1px solid var(--border-accent);
+      color: var(--text-bright);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 0.35rem 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+    .share-btn:hover {
+      border-color: var(--color-cs);
+      color: var(--color-cs);
+    }
+
+    /* Top Legend Bar */
+    .legend-bar {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-main);
+    }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .legend-dash {
+      width: 14px;
+      height: 2px;
+      border-top: 2px dashed;
+    }
+
+    /* Fullscreen Interactive Canvas */
+    .canvas-viewport {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Bottom Status Telemetry Footer */
+    footer {
+      border-top: 1px solid var(--border-line);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr) auto;
+      background: rgba(7, 9, 14, 0.95);
+      z-index: 10;
+    }
+    .metric-cell {
+      padding: 1rem 1.5rem;
+      border-right: 1px solid var(--border-line);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .metric-val {
+      font-family: var(--font-serif);
+      font-size: 2.2rem;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--text-bright);
+      line-height: 1;
+      margin-bottom: 0.35rem;
+    }
+    .metric-lbl {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .footer-actions {
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .footer-actions a {
+      color: var(--text-bright);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-actions a:hover {
+      color: var(--color-cs);
+    }
+  </style>
 </head>
 <body>
-<canvas id="c"></canvas>
-<div id="cab-nav" style="position:fixed;bottom:0;right:0;z-index:200;padding:.4rem 1rem;background:rgba(8,9,15,.95);border-top:1px solid rgba(228,223,214,.1);border-left:1px solid rgba(228,223,214,.1);font-family:var(--mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;gap:.7rem;"><a href="../about/index.html" style="color:rgba(228,223,214,.5);text-decoration:none;transition:color .2s;">← Cabinet</a> · <button class="kw-share-btn" style="background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:inherit;letter-spacing:inherit;text-transform:inherit;color:rgba(228,223,214,.5);padding:0;transition:color .2s;">Share ↑</button></div>
-<div id="header">
-  <div id="title">
-    <h1>Signal <em>&</em> Noise</h1>
-    <p>Herff Jones · Order Entry Flow · hover to inspect</p>
 
-    <button class="kw-share-btn" style="margin-top:6px;background:transparent;border:1px solid rgba(228,223,214,.2);color:rgba(228,223,214,.5);cursor:pointer;font-family:var(--mono,monospace);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;padding:3px 10px;border-radius:1px;transition:all .2s;">Share ↑</button>
-  </div>
-  <div id="legend">
-    <div class="leg"><div class="leg-pip" style="background:var(--move)"></div>order moving</div>
-    <div class="leg"><div class="leg-pip" style="background:var(--wait)"></div>CS hold</div>
-    <div class="leg"><div class="leg-pip" style="background:var(--block)"></div>oracle / error</div>
-    <div class="leg"><div class="leg-pip" style="background:#c8a040"></div>WC↔Oracle re-entry</div>
-    <div class="leg"><div class="leg-dash" style="border-color:var(--teams)"></div>Teams / in-person</div>
-    <div class="leg"><div class="leg-dash" style="border-color:var(--block)"></div>formal reject</div>
-  </div>
-</div>
-<div id="tooltip">
-  <div class="tt-name" id="tt-name"></div>
-  <div class="tt-owner" id="tt-owner"></div>
-  <div class="tt-tags" id="tt-tags"></div>
-  <div class="tt-body" id="tt-body"></div>
-  <div class="tt-oracle" id="tt-oracle"></div>
-  <div class="tt-friction" id="tt-friction"></div>
-</div>
-<div id="stats">
-  <div class="stat"><div class="stat-n" id="s-move">0</div><div class="stat-l">in transit</div></div>
-  <div class="stat"><div class="stat-n" id="s-reentry">0</div><div class="stat-l">WC↔Oracle trips</div></div>
-  <div class="stat"><div class="stat-n" id="s-wait">0</div><div class="stat-l">CS hold</div></div>
-  <div class="stat"><div class="stat-n" id="s-block">0</div><div class="stat-l">oracle error</div></div>
-  <div class="stat"><div class="stat-n" id="s-done">0</div><div class="stat-l">to production</div></div>
-</div>
-<script>
-const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
-let W,H,T=0,balls=[],reentryBalls=[],informalPulses=[],statDone=0,statReentry=0,hovered=null;
+  <!-- Header & Legend -->
+  <header>
+    <div class="brand-group">
+      <h1 class="site-title">Signal &amp; Noise</h1>
+      <div class="site-subtitle">Herff Jones &middot; Order Entry Flow &middot; Realtime Routing</div>
+    </div>
 
-const C={move:'#4a8faa',wait:'#c8922a',block:'#c85040',done:'#5a9a6a',purple:'#8060b0',teams:'#4a6aaa',reentry:'#c8a040'};
+    <div class="legend-bar">
+      <div class="legend-item">
+        <span class="legend-dot" style="background: var(--color-order);"></span>
+        <span>Order Moving</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot" style="background: var(--color-cs);"></span>
+        <span>CS Hold</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot" style="background: var(--color-oracle);"></span>
+        <span>Oracle / Error</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot" style="background: var(--color-reentry);"></span>
+        <span>WC&harr;Oracle Re-entry</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dash" style="color: var(--color-teams);"></span>
+        <span>Teams / In-Person</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dash" style="color: var(--color-reject);"></span>
+        <span>Formal Reject</span>
+      </div>
+    </div>
 
-// ── NODES ─────────────────────────────────────────────────────────────────────
-const NODES=[
-  {id:'wc', label:'WebCenter Queue', owner:'Order Entry', type:'move', fx:.06,fy:.42,sz:1.0,
-   tags:[{n:'WebCenter',c:C.move}],
-   body:'Orders arrive in WebCenter and come to Order Entry first. Everything enters through OE — completeness check is an OE task.',
-   oracle:null, friction:null},
+    <button class="share-btn" onclick="navigator.clipboard.writeText(window.location.href); alert('Link copied to clipboard');">Share &uarr;</button>
+  </header>
 
-  {id:'oe', label:'Order Entry', owner:'OE — central hub', type:'block', fx:.32,fy:.42,sz:1.55,
-   tags:[{n:'WebCenter',c:C.move},{n:'Oracle',c:C.block}],
-   body:'Everything routes through OE. While processing, data moves back and forth between WebCenter and Oracle repeatedly — checking, entering, verifying, correcting. The number of round trips varies wildly order to order. All notes require a date and timestamp.',
-   oracle:'Oracle is the primary pain point. Data is read from WebCenter and re-keyed into Oracle manually — no automated transfer. Then checked back against WebCenter. Then Oracle may error, requiring correction. Then verified again. Each round trip is a chance for drift or error that can cascade downstream.',
-   friction:'When CS info is wrong, art or signature changes are unresolved, or OE has waited too long, the order is placed on formal hold and rejected to CS. Back-and-forth with CS runs both through the formal system and informally via Teams or walking to their desk.'},
+  <!-- Interactive Network Simulation -->
+  <main class="canvas-viewport">
+    <canvas id="flowCanvas"></canvas>
+  </main>
 
-  {id:'cs', label:'CS Hold', owner:'Customer Service', type:'wait', fx:.32,fy:.78,sz:1.1,
-   tags:[{n:'Oracle',c:C.block},{n:'Zendesk',c:C.wait},{n:'Wrike',c:C.done},{n:'Teams',c:C.teams}],
-   body:'Formal hold status in the system. CS verifies and corrects customer info, rep data, art approvals, and signature changes — CS owns tracking those. CS tries to help fill gaps. Notes must be date and timestamped. CS has deeper Oracle access than OE for customer records.',
-   oracle:'CS can make Oracle corrections to customer data that OE cannot directly edit. Some holds require CS to update Oracle before the order can return to OE.',
-   friction:'Timeline is outside OE control. No guaranteed SLA. Communication happens formally through the hold status and informally through Teams or walking over. Sometimes the order returns resolved; sometimes OE has to reject again.'},
+  <!-- Bottom Diagnostic Telemetry -->
+  <footer>
+    <div class="metric-cell">
+      <div class="metric-val" id="valInTransit">3</div>
+      <div class="metric-lbl">In Transit</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-val" id="valReentry">131</div>
+      <div class="metric-lbl">WC&harr;Oracle Trips</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-val" id="valCsHold">13</div>
+      <div class="metric-lbl">CS Hold</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-val" id="valOracleError">11</div>
+      <div class="metric-lbl">Oracle Error</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-val" id="valToProd">0</div>
+      <div class="metric-lbl">To Production</div>
+    </div>
+    <div class="footer-actions">
+      <a href="../index.html">&larr; Cabinet</a>
+      <span style="color: var(--border-accent);">&middot;</span>
+      <a href="#" onclick="location.reload(); return false;">Reset</a>
+    </div>
+  </footer>
 
-  {id:'nl', label:'Namelist', owner:'NL Coordinator', type:'wait', fx:.62,fy:.42,sz:1.2,
-   tags:[{n:'Oracle',c:C.block}],
-   body:'OE pushes to NL once the order is ready. NL enters and validates the namelist — student names, sizing, graduation product details — and sets up CSV file formats that properly link to prepress and production. Everything must be right here or problems surface days later.',
-   oracle:null,
-   friction:'NL rejects always route back through OE first, even when the underlying issue is a CS problem. Typical reasons: missing or wrong data OE needs to fix, CSV format or linking issues, potential typos. If it is a CS issue, OE then formally rejects to CS.'},
+  <script>
+    const canvas = document.getElementById('flowCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
 
-  {id:'pp', label:'Prepress', owner:'Downstream', type:'done', fx:.82,fy:.42,sz:0.92,
-   tags:[],
-   body:'NL hands off with properly formatted CSV files linked for production. Once here the order is largely out of OE and NL hands — but corrections can come back.',
-   oracle:null,
-   friction:'Errors that made it through Oracle entry and were not caught in NL can surface here. Corrections return to NL or OE at a stage where changes are harder and more consequential.'},
-
-  {id:'prod', label:'Production', owner:'Downstream', type:'done', fx:.95,fy:.42,sz:0.85,
-   tags:[],
-   body:'Final production. An order reaching here without corrections is a clean run.',
-   oracle:null, friction:null},
-];
-
-const EDGES=[
-  ['wc','oe','main'],
-  ['oe','nl','main'],
-  ['nl','pp','main'],
-  ['pp','prod','main'],
-  ['oe','cs','reject'],
-  ['cs','oe','return'],
-  ['nl','oe','nl-reject'],
-  ['pp','nl','correction'],
-  ['pp','oe','correction-far'],
-];
-
-function cp(ax,ay,bx,by,style){
-  const mx=(ax+bx)/2,my=(ay+by)/2;
-  if(style==='main')           return{cx:mx,cy:my};
-  if(style==='reject')         return{cx:ax+25,cy:my+15};
-  if(style==='return')         return{cx:bx-55,cy:my-10};
-  if(style==='nl-reject')      return{cx:mx,cy:my-85};
-  if(style==='correction')     return{cx:mx,cy:my-60};
-  if(style==='correction-far') return{cx:mx,cy:my-115};
-  if(style==='informal')       return{cx:ax-65,cy:my};
-  return{cx:mx,cy:my};
-}
-
-function ptOn(ax,ay,bx,by,style,t){
-  const{cx,cy}=cp(ax,ay,bx,by,style);
-  return{x:(1-t)*(1-t)*ax+2*(1-t)*t*cx+t*t*bx,
-         y:(1-t)*(1-t)*ay+2*(1-t)*t*cy+t*t*by};
-}
-
-function edgeColor(style){
-  if(style==='main')return C.move;
-  if(style==='reject'||style==='nl-reject')return C.block;
-  if(style==='return')return C.wait;
-  if(style==='correction'||style==='correction-far')return C.purple;
-  return C.move;
-}
-
-// ── RE-ENTRY LOOP: WC↔Oracle inside OE ───────────────────────────────────────
-// Two sub-nodes rendered inside/around the OE node
-// wcSub = left side, oracleSub = right side
-// re-entry balls bounce between them while an order is stalled at OE
-
-let wcSub={x:0,y:0}, oracleSub={x:0,y:0};
-
-function updateSubNodes(){
-  const oe=NODES.find(n=>n.id==='oe');
-  if(!oe) return;
-  const offset=oe.r*0.62;
-  wcSub    ={x:oe.x-offset, y:oe.y};
-  oracleSub={x:oe.x+offset, y:oe.y};
-}
-
-function spawnReentryBall(){
-  // random number of trips — weighted toward more rather than fewer
-  const trips=2+Math.floor(Math.random()*8); // 2–9 trips
-  reentryBalls.push({
-    trips, tripsDone:0,
-    goingToOracle:true,
-    prog:0, speed:0.025+Math.random()*0.02,
-    sz:2+Math.random()*1.5,
-    active:true,
-  });
-  statReentry+=trips;
-  document.getElementById('s-reentry').textContent=statReentry;
-}
-
-function tickReentry(){
-  reentryBalls.forEach(b=>{
-    if(!b.active) return;
-    b.prog+=b.speed;
-    const from=b.goingToOracle?wcSub:oracleSub;
-    const to  =b.goingToOracle?oracleSub:wcSub;
-    const t=Math.min(b.prog,1);
-    // arc slightly above center line so multiple balls don't overlap
-    const arcOff=(b.goingToOracle?-1:1)*12;
-    const mx=(from.x+to.x)/2, my=(from.y+to.y)/2+arcOff;
-    b.x=(1-t)*(1-t)*from.x+2*(1-t)*t*mx+t*t*to.x;
-    b.y=(1-t)*(1-t)*from.y+2*(1-t)*t*my+t*t*to.y;
-    if(b.prog>=1){
-      b.prog=0;
-      b.goingToOracle=!b.goingToOracle;
-      b.tripsDone++;
-      if(b.tripsDone>=b.trips) b.active=false;
+    function resize() {
+      width = canvas.width = canvas.parentElement.clientWidth;
+      height = canvas.height = canvas.parentElement.clientHeight;
     }
-  });
-  reentryBalls=reentryBalls.filter(b=>b.active);
-}
+    window.addEventListener('resize', resize);
+    resize();
 
-// ── ORDER PATHS ───────────────────────────────────────────────────────────────
-const PATHS=[
-  {w:.24,p:['wc','oe','nl','pp','prod']},
-  {w:.20,p:['wc','oe','cs','oe','nl','pp','prod']},
-  {w:.17,p:['wc','oe','nl','oe','nl','pp','prod']},
-  {w:.13,p:['wc','oe','nl','oe','cs','oe','nl','pp','prod']},
-  {w:.10,p:['wc','oe','cs','oe','cs','oe','nl','pp','prod']},
-  {w:.09,p:['wc','oe','nl','oe','nl','oe','cs','oe','nl','pp','prod']},
-  {w:.07,p:['wc','oe','nl','pp','nl','oe','nl','pp','prod']},
-];
-
-const STALL={
-  wc:  ()=>12+Math.random()*18,
-  oe:  ()=>80+Math.random()*110,
-  cs:  ()=>170+Math.random()*290,
-  nl:  ()=>55+Math.random()*85,
-  pp:  ()=>22+Math.random()*28,
-  prod:()=>18,
-};
-
-function pickPath(){
-  let r=Math.random(),acc=0;
-  for(const p of PATHS){acc+=p.w;if(r<acc)return[...p.p];}
-  return[...PATHS[0].p];
-}
-
-function edgeStyleBetween(a,b){
-  const e=EDGES.find(e=>e[0]===a&&e[1]===b);
-  return e?e[2]:'main';
-}
-
-function spawnBall(){
-  const path=pickPath();
-  const start=NODES.find(n=>n.id===path[0]);
-  balls.push({path,seg:0,prog:0,speed:0.005+Math.random()*0.005,
-    x:start.x,y:start.y,state:'move',stall:0,done:false,sz:2.5+Math.random()*2,
-    spawned:false});
-}
-
-function spawnInformal(){
-  const oe=NODES.find(n=>n.id==='oe'),cs=NODES.find(n=>n.id==='cs');
-  if(!oe||!cs) return;
-  const toCS=Math.random()>0.5;
-  informalPulses.push({
-    ax:toCS?oe.x:cs.x,ay:toCS?oe.y:cs.y,
-    bx:toCS?cs.x:oe.x,by:toCS?cs.y:oe.y,
-    t:0,speed:0.007+Math.random()*0.006,
-  });
-}
-
-function tickBalls(){
-  const counts={move:0,wait:0,block:0};
-  balls.forEach(b=>{
-    if(b.done) return;
-    const cur=NODES.find(n=>n.id===b.path[b.seg]);
-    if(!cur){b.done=true;return;}
-
-    if(b.stall>0){
-      b.stall--;
-      b.state=cur.type;
-      b.x=cur.x+Math.sin(T*2+b.sz)*1.4;
-      b.y=cur.y+Math.cos(T*1.8+b.sz)*1.4;
-      // if stalled at OE, spawn re-entry balls
-      if(cur.id==='oe'&&!b.spawned&&b.stall<STALL.oe()-5){
-        spawnReentryBall();
-        b.spawned=true;
-      }
-      if(counts[b.state]!==undefined) counts[b.state]++;
-      return;
+    // System Nodes Layout
+    function getNodes() {
+      const cy = height * 0.44;
+      return {
+        wcQueue:    { x: width * 0.06, y: cy, r: 28, label: 'WebCenter Queue', color: '#38bdf8' },
+        orderEntry: { x: width * 0.32, y: cy, r: 44, label: 'Order Entry', color: '#f87171' },
+        csHold:     { x: width * 0.32, y: cy + (height * 0.34), r: 38, label: 'CS Hold', sub: 'Oracle-Zendesk-Wrike-Teams', color: '#fbbf24' },
+        namelist:   { x: width * 0.62, y: cy, r: 32, label: 'Namelist', color: '#eab308' },
+        prepress:   { x: width * 0.82, y: cy, r: 26, label: 'Prepress', color: '#34d399' },
+        production: { x: width * 0.94, y: cy, r: 24, label: 'Production', color: '#34d399' }
+      };
     }
-    b.spawned=false;
-    if(b.seg>=b.path.length-1){b.done=true;statDone++;return;}
-    const nxt=NODES.find(n=>n.id===b.path[b.seg+1]);
-    if(!nxt){b.done=true;return;}
-    b.prog+=b.speed;
-    const style=edgeStyleBetween(b.path[b.seg],b.path[b.seg+1]);
-    const pt=ptOn(cur.x,cur.y,nxt.x,nxt.y,style,Math.min(b.prog,1));
-    b.x=pt.x;b.y=pt.y;b.state=cur.type;
-    if(counts[b.state]!==undefined) counts[b.state]++;
-    if(b.prog>=1){
-      b.seg++;b.prog=0;
-      const nn=NODES.find(n=>n.id===b.path[b.seg]);
-      if(nn&&STALL[nn.id]){b.stall=STALL[nn.id]();b.x=nn.x;b.y=nn.y;}
-      if(b.seg>=b.path.length-1){b.done=true;statDone++;}
-    }
-  });
-  balls=balls.filter(b=>!b.done);
-  informalPulses.forEach(p=>{p.t+=p.speed;});
-  informalPulses=informalPulses.filter(p=>p.t<1);
-  document.getElementById('s-move').textContent=counts.move;
-  document.getElementById('s-wait').textContent=counts.wait;
-  document.getElementById('s-block').textContent=counts.block;
-  document.getElementById('s-done').textContent=statDone;
-}
 
-// ── DRAW ──────────────────────────────────────────────────────────────────────
-function drawEdges(){
-  EDGES.forEach(([fid,tid,style])=>{
-    const f=NODES.find(n=>n.id===fid),t=NODES.find(n=>n.id===tid);
-    if(!f||!t) return;
-    const{cx,cy}=cp(f.x,f.y,t.x,t.y,style);
-    const col=edgeColor(style);
-    const isDash=style!=='main';
-    ctx.beginPath();
-    ctx.moveTo(f.x,f.y);
-    ctx.quadraticCurveTo(cx,cy,t.x,t.y);
-    ctx.strokeStyle=col+'2e';
-    ctx.lineWidth=style==='main'?0.9:0.6;
-    if(isDash) ctx.setLineDash([4,7]);
-    ctx.stroke(); ctx.setLineDash([]);
-    // arrowhead
-    const p1=ptOn(f.x,f.y,t.x,t.y,style,0.87);
-    const p2=ptOn(f.x,f.y,t.x,t.y,style,0.93);
-    const ang=Math.atan2(p2.y-p1.y,p2.x-p1.x);
-    ctx.beginPath();
-    ctx.moveTo(t.x-Math.cos(ang-0.4)*7,t.y-Math.sin(ang-0.4)*7);
-    ctx.lineTo(t.x,t.y);
-    ctx.lineTo(t.x-Math.cos(ang+0.4)*7,t.y-Math.sin(ang+0.4)*7);
-    ctx.strokeStyle=col+'55';ctx.lineWidth=0.8;ctx.stroke();
-  });
+    // Packet System
+    let packets = [];
+    const packetTypes = ['order', 'reentry', 'oracle', 'cs'];
 
-  // Informal OE↔CS channel
-  const oe=NODES.find(n=>n.id==='oe'),cs=NODES.find(n=>n.id==='cs');
-  if(oe&&cs){
-    const{cx,cy}=cp(oe.x,oe.y,cs.x,cs.y,'informal');
-    ctx.beginPath();ctx.moveTo(oe.x,oe.y);ctx.quadraticCurveTo(cx,cy,cs.x,cs.y);
-    ctx.strokeStyle=C.teams+'25';ctx.lineWidth=0.6;ctx.setLineDash([3,9]);ctx.stroke();ctx.setLineDash([]);
-    const mid=ptOn(oe.x,oe.y,cs.x,cs.y,'informal',0.5);
-    ctx.font='9px Geist Mono,monospace';ctx.textAlign='center';
-    ctx.fillStyle=C.teams+'44';ctx.fillText('Teams / in-person',mid.x-18,mid.y-4);
-  }
-}
-
-function drawReentryLoop(){
-  const oe=NODES.find(n=>n.id==='oe');
-  if(!oe) return;
-
-  // draw the two sub-nodes
-  const subR=oe.r*0.28;
-  const pulse=Math.sin(T*2)*0.5+0.5;
-
-  // arc between them — draw both directions
-  [-1,1].forEach(dir=>{
-    const from=dir>0?wcSub:oracleSub;
-    const to  =dir>0?oracleSub:wcSub;
-    const arcOff=dir*13;
-    const mx=(from.x+to.x)/2, my=(from.y+to.y)/2+arcOff;
-    ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.quadraticCurveTo(mx,my,to.x,to.y);
-    ctx.strokeStyle=C.reentry+'30';ctx.lineWidth=0.7;ctx.setLineDash([3,6]);ctx.stroke();ctx.setLineDash([]);
-  });
-
-  // WC sub-node
-  ctx.beginPath();ctx.arc(wcSub.x,wcSub.y,subR+2+pulse*2,0,Math.PI*2);
-  ctx.strokeStyle=C.move+'22';ctx.lineWidth=0.5;ctx.stroke();
-  ctx.beginPath();ctx.arc(wcSub.x,wcSub.y,subR,0,Math.PI*2);
-  ctx.fillStyle=C.move+'22';ctx.fill();
-  ctx.strokeStyle=C.move+'60';ctx.lineWidth=0.8;ctx.stroke();
-  ctx.font='8px Geist Mono,monospace';ctx.textAlign='center';
-  ctx.fillStyle=C.move+'88';ctx.fillText('WC',wcSub.x,wcSub.y+3);
-
-  // Oracle sub-node
-  ctx.beginPath();ctx.arc(oracleSub.x,oracleSub.y,subR+2+pulse*2,0,Math.PI*2);
-  ctx.strokeStyle=C.block+'22';ctx.lineWidth=0.5;ctx.stroke();
-  ctx.beginPath();ctx.arc(oracleSub.x,oracleSub.y,subR,0,Math.PI*2);
-  ctx.fillStyle=C.block+'22';ctx.fill();
-  ctx.strokeStyle=C.block+'60';ctx.lineWidth=0.8;ctx.stroke();
-  ctx.font='8px Geist Mono,monospace';ctx.textAlign='center';
-  ctx.fillStyle=C.block+'88';ctx.fillText('ORA',oracleSub.x,oracleSub.y+3);
-
-  // re-entry balls
-  reentryBalls.forEach(b=>{
-    if(!b.x) return;
-    ctx.beginPath();ctx.arc(b.x,b.y,b.sz+3,0,Math.PI*2);
-    ctx.fillStyle=C.reentry+'1a';ctx.fill();
-    ctx.beginPath();ctx.arc(b.x,b.y,b.sz,0,Math.PI*2);
-    ctx.fillStyle=C.reentry+'cc';ctx.fill();
-  });
-}
-
-function drawNodes(){
-  NODES.forEach(n=>{
-    const isHov=hovered&&hovered.id===n.id;
-    const col=C[n.type]||C.move;
-    const pulse=Math.sin(T*1.1+n.fx*7)*0.5+0.5;
-    const r=n.r;
-    if(isHov){ctx.beginPath();ctx.arc(n.x,n.y,r+24,0,Math.PI*2);ctx.fillStyle=col+'12';ctx.fill();}
-    ctx.beginPath();ctx.arc(n.x,n.y,r+5+pulse*5,0,Math.PI*2);
-    ctx.strokeStyle=col+(isHov?'50':'18');ctx.lineWidth=isHov?1:0.5;ctx.stroke();
-    ctx.beginPath();ctx.arc(n.x,n.y,r,0,Math.PI*2);
-    ctx.fillStyle=col+Math.round(18+pulse*14).toString(16).padStart(2,'0');ctx.fill();
-    ctx.strokeStyle=col+(isHov?'cc':'50');ctx.lineWidth=isHov?1.5:0.8;ctx.stroke();
-    // system label
-    const fsz=Math.max(8,Math.round(r*0.24));
-    ctx.font=fsz+'px Geist Mono,monospace';ctx.textAlign='center';ctx.fillStyle=col+'70';
-    if(n.id==='cs'){
-      ctx.fillText('Oracle·Zendesk',n.x,n.y-r*0.2);
-      ctx.font=Math.max(7,fsz-1)+'px Geist Mono,monospace';
-      ctx.fillText('Wrike·Teams',n.x,n.y+r*0.22);
-    } else if(n.id==='oe'){
-      // just show the re-entry label above, not the system labels — those are the sub-nodes
-
-    }
-    // node name
-    const lsz=Math.max(10,Math.round(r*0.28));
-    ctx.font=lsz+'px Instrument Serif,serif';
-    ctx.fillStyle=isHov?'rgba(228,223,214,0.9)':'rgba(228,223,214,0.46)';
-    ctx.fillText(n.label,n.x,n.y+r+lsz*1.15);
-    // friction dot
-    if(n.friction){ctx.beginPath();ctx.arc(n.x+r*0.7,n.y-r*0.7,3.5,0,Math.PI*2);ctx.fillStyle='#c85040dd';ctx.fill();}
-  });
-}
-
-function drawBalls(){
-  balls.forEach(b=>{
-    if(!b.x||b.done) return;
-    const col=C[b.state]||C.move;
-    ctx.beginPath();ctx.arc(b.x,b.y,b.sz+4,0,Math.PI*2);ctx.fillStyle=col+'1a';ctx.fill();
-    ctx.beginPath();ctx.arc(b.x,b.y,b.sz,0,Math.PI*2);ctx.fillStyle=col+'cc';ctx.fill();
-  });
-}
-
-function drawInformal(){
-  informalPulses.forEach(p=>{
-    const{cx,cy}=cp(p.ax,p.ay,p.bx,p.by,'informal');
-    const t=p.t;
-    const x=(1-t)*(1-t)*p.ax+2*(1-t)*t*cx+t*t*p.bx;
-    const y=(1-t)*(1-t)*p.ay+2*(1-t)*t*cy+t*t*p.by;
-    ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);
-    ctx.fillStyle=C.teams+'aa';ctx.fill();
-  });
-}
-
-// ── TOOLTIP ───────────────────────────────────────────────────────────────────
-canvas.addEventListener('mousemove',e=>{
-  let best=null,bd=Infinity;
-  NODES.forEach(n=>{const d=Math.hypot(e.clientX-n.x,e.clientY-n.y);if(d<n.r+22&&d<bd){bd=d;best=n;}});
-  hovered=best;
-  if(best){
-    const col=C[best.type];
-    document.getElementById('tt-name').textContent=best.label;
-    document.getElementById('tt-name').style.color=col;
-    document.getElementById('tt-owner').textContent=best.owner;
-    document.getElementById('tt-owner').style.color=col+'99';
-    const te=document.getElementById('tt-tags');te.innerHTML='';
-    best.tags.forEach(t=>{const s=document.createElement('span');s.className='tt-tag';s.textContent=t.n;s.style.color=t.c;s.style.borderColor=t.c+'55';te.appendChild(s);});
-    document.getElementById('tt-body').textContent=best.body;
-    const oe=document.getElementById('tt-oracle');oe.textContent=best.oracle||'';oe.style.display=best.oracle?'block':'none';
-    const fe=document.getElementById('tt-friction');fe.textContent=best.friction||'';fe.style.display=best.friction?'block':'none';
-    tooltip.style.opacity='1';
-    tooltip.style.left=Math.min(e.clientX+22,W-310)+'px';
-    tooltip.style.top=Math.max(20,e.clientY-16)+'px';
-  } else tooltip.style.opacity='0';
-});
-canvas.addEventListener('mouseleave',()=>{hovered=null;tooltip.style.opacity='0';});
-
-function resize(){
-  const dpr=devicePixelRatio||1;
-  W=window.innerWidth;H=window.innerHeight;
-  canvas.width=W*dpr;canvas.height=H*dpr;
-  canvas.style.width=W+'px';canvas.style.height=H+'px';
-  ctx.scale(dpr,dpr);
-  const base=Math.min(W,H)*0.048;
-  NODES.forEach(n=>{n.x=n.fx*W;n.y=n.fy*H;n.r=base*n.sz;});
-  updateSubNodes();
-}
-
-function frame(){
-  ctx.clearRect(0,0,W,H);
-  ctx.strokeStyle='rgba(228,223,214,0.02)';ctx.lineWidth=0.5;
-  for(let x=0;x<W;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-  for(let y=0;y<H;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-  drawEdges();
-  tickBalls();
-  tickReentry();
-  drawReentryLoop();
-  drawBalls();
-  drawInformal();
-  drawNodes();
-  if(Math.random()<0.02&&balls.length<30) spawnBall();
-  if(Math.random()<0.025&&informalPulses.length<8) spawnInformal();
-  T+=0.016;
-  requestAnimationFrame(frame);
-}
-
-window.addEventListener('resize',()=>{resize();});
-resize();
-for(let i=0;i<10;i++) setTimeout(spawnBall,i*320);
-for(let i=0;i<3;i++) setTimeout(spawnInformal,i*700+500);
-frame();
-</script>
-
-<div id="kw-toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);background:#c9a84c;color:#0d0a07;padding:8px 18px;border-radius:2px;font-size:11px;letter-spacing:.15em;text-transform:uppercase;opacity:0;transition:all .28s;pointer-events:none;z-index:9999;white-space:nowrap">Copied!</div>
-<script>
-(function(){
-  function kwShare(){
-    var url="https://kellis-web.com/signal-noise/",title="Signal & Noise — Herff Jones Order Flow",text="A live visualization of the Herff Jones order entry workflow.\n\n"+url;
-    if(navigator.share){
-      navigator.share({title:title,text:text,url:url}).catch(function(){});
-    }else{
-      navigator.clipboard.writeText(url).then(function(){
-        var t=document.getElementById('kw-toast');
-        t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';
-        setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(-50%) translateY(16px)';},2200);
+    function spawnPacket() {
+      const type = packetTypes[Math.floor(Math.random() * packetTypes.length)];
+      packets.push({
+        type: type,
+        progress: 0,
+        speed: 0.0018 + Math.random() * 0.0015,
+        loopCount: 0
       });
     }
-  }
-  document.querySelectorAll('.kw-share-btn').forEach(function(b){b.addEventListener('click',kwShare);});
-})();
-</script>
+
+    for (let i = 0; i < 18; i++) {
+      packets.push({
+        type: packetTypes[Math.floor(Math.random() * packetTypes.length)],
+        progress: Math.random(),
+        speed: 0.0018 + Math.random() * 0.0015,
+        loopCount: 0
+      });
+    }
+    setInterval(spawnPacket, 1200);
+
+    let tick = 0;
+
+    function drawDashedCurve(p1, p2, cp1, cp2, color) {
+      ctx.save();
+      ctx.setLineDash([4, 6]);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p2.x, p2.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function getBezierPoint(t, p0, p1, p2, p3) {
+      const cx = 3 * (p1.x - p0.x);
+      const bx = 3 * (p2.x - p1.x) - cx;
+      const ax = p3.x - p0.x - cx - bx;
+
+      const cy = 3 * (p1.y - p0.y);
+      const by = 3 * (p2.y - p1.y) - cy;
+      const ay = p3.y - p0.y - cy - by;
+
+      const tSquared = t * t;
+      const tCubed = tSquared * t;
+
+      return {
+        x: (ax * tCubed) + (bx * tSquared) + (cx * t) + p0.x,
+        y: (ay * tCubed) + (by * tSquared) + (cy * t) + p0.y
+      };
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      tick += 0.02;
+      const N = getNodes();
+
+      // --- 1. Static Pipeline Grid & Curves ---
+      // Main Spine
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(N.wcQueue.x, N.wcQueue.y);
+      ctx.lineTo(N.production.x, N.production.y);
+      ctx.stroke();
+
+      // Teams / In-Person Backchannel (OE <-> CS Hold Left Loop)
+      drawDashedCurve(
+        N.orderEntry, N.csHold,
+        { x: N.orderEntry.x - 45, y: (N.orderEntry.y + N.csHold.y) / 2 },
+        { x: N.csHold.x - 45, y: (N.orderEntry.y + N.csHold.y) / 2 },
+        '#60a5fa'
+      );
+
+      // Formal Rejection Loop (OE <-> CS Hold Right Loop)
+      drawDashedCurve(
+        N.csHold, N.orderEntry,
+        { x: N.csHold.x + 35, y: (N.orderEntry.y + N.csHold.y) / 2 },
+        { x: N.orderEntry.x + 35, y: (N.orderEntry.y + N.csHold.y) / 2 },
+        '#ef4444'
+      );
+
+      // Re-entry Arc (Namelist -> Order Entry)
+      drawDashedCurve(
+        N.namelist, N.orderEntry,
+        { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 80 },
+        { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 80 },
+        '#334155'
+      );
+
+      // Prepress Re-entry Arc (Prepress -> Order Entry)
+      drawDashedCurve(
+        N.prepress, N.orderEntry,
+        { x: (N.prepress.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 120 },
+        { x: (N.prepress.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 120 },
+        '#242933'
+      );
+
+      // --- 2. Render System Nodes ---
+      Object.values(N).forEach(node => {
+        // Outer Translucent Zone
+        ctx.fillStyle = node.color + '10';
+        ctx.strokeStyle = node.color + '40';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Inner Core Ring
+        ctx.fillStyle = '#07090e';
+        ctx.strokeStyle = node.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.r * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Labels
+        ctx.font = '600 13px "JetBrains Mono", monospace';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.fillText(node.label, node.x, node.y + node.r + 20);
+
+        if (node.sub) {
+          ctx.font = '500 10px "JetBrains Mono", monospace';
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillText(node.sub, node.x, node.y + 4);
+        }
+      });
+
+      // Teams in-person text tag
+      ctx.font = '600 11px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#60a5fa';
+      ctx.textAlign = 'right';
+      ctx.fillText('Teams / in-person', N.orderEntry.x - 55, (N.orderEntry.y + N.csHold.y) / 2);
+
+      // --- 3. Dynamic Moving Packets ---
+      for (let i = packets.length - 1; i >= 0; i--) {
+        const p = packets[i];
+        p.progress += p.speed;
+
+        let px, py, color;
+
+        if (p.type === 'order') {
+          // Linear main progression
+          color = '#38bdf8';
+          px = N.wcQueue.x + (N.production.x - N.wcQueue.x) * p.progress;
+          py = N.wcQueue.y;
+        } else if (p.type === 'cs') {
+          // OE -> CS Hold -> OE loop
+          color = '#fbbf24';
+          const p0 = N.orderEntry, p3 = N.csHold;
+          const cp1 = { x: N.orderEntry.x - 45, y: (N.orderEntry.y + N.csHold.y) / 2 };
+          const cp2 = { x: N.csHold.x - 45, y: (N.orderEntry.y + N.csHold.y) / 2 };
+
+          if (p.progress <= 0.5) {
+            const pt = getBezierPoint(p.progress * 2, p0, cp1, cp2, p3);
+            px = pt.x; py = pt.y;
+          } else {
+            color = '#ef4444';
+            const pt = getBezierPoint((p.progress - 0.5) * 2, p3, cp2, cp1, p0);
+            px = pt.x; py = pt.y;
+          }
+        } else if (p.type === 'reentry') {
+          // Namelist -> Order Entry Top Arc
+          color = '#eab308';
+          const p0 = N.namelist, p3 = N.orderEntry;
+          const cp1 = { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 80 };
+          const pt = getBezierPoint(p.progress, p0, cp1, cp1, p3);
+          px = pt.x; py = pt.y;
+        } else {
+          // Oracle internal cluster stall
+          color = '#f87171';
+          const angle = tick * 2 + i;
+          px = N.orderEntry.x + Math.cos(angle) * (18 + (i % 8));
+          py = N.orderEntry.y + Math.sin(angle) * (18 + (i % 8));
+        }
+
+        // Draw High-Contrast Glowing Packet
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0; // reset
+
+        if (p.progress >= 1) {
+          packets.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
 </body>
 </html>
