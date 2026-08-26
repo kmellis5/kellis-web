@@ -59,7 +59,7 @@
     }
     .site-title {
       font-family: var(--font-serif);
-      font-size: 1.75rem;
+      font-size: 1.85rem;
       font-weight: 400;
       color: var(--text-bright);
       letter-spacing: -0.01em;
@@ -70,6 +70,16 @@
       letter-spacing: 0.14em;
       text-transform: uppercase;
       font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .site-subtitle .inspect-badge {
+      color: var(--color-cs);
+      background: rgba(251, 191, 36, 0.12);
+      padding: 0.1rem 0.4rem;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 2px;
     }
     .share-btn {
       background: transparent;
@@ -118,12 +128,13 @@
       border-top: 2px dashed;
     }
 
-    /* Fullscreen Interactive Canvas */
+    /* Fullscreen Viewport */
     .canvas-viewport {
       flex: 1;
       position: relative;
       width: 100%;
       height: 100%;
+      cursor: crosshair;
     }
     canvas {
       position: absolute;
@@ -132,6 +143,59 @@
       width: 100%;
       height: 100%;
       display: block;
+    }
+
+    /* Hover Inspection HUD Card */
+    #inspectHUD {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -120%);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8), 0 0 15px rgba(56, 189, 248, 0.15);
+      border-radius: 4px;
+      padding: 1rem 1.25rem;
+      min-width: 260px;
+      max-width: 320px;
+      z-index: 50;
+    }
+    #inspectHUD.active {
+      opacity: 1;
+      transform: translate(-50%, -105%);
+    }
+    .hud-title {
+      font-family: var(--font-serif);
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      line-height: 1.1;
+      margin-bottom: 0.25rem;
+    }
+    .hud-tag {
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      display: inline-block;
+    }
+    .hud-desc {
+      font-size: 0.78rem;
+      font-family: var(--font-sans, sans-serif);
+      color: #cbd5e1;
+      line-height: 1.45;
+      border-top: 1px solid var(--border-line);
+      padding-top: 0.5rem;
+    }
+    .hud-stat {
+      margin-top: 0.5rem;
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      color: var(--color-cs);
+      font-weight: 600;
     }
 
     /* Bottom Status Telemetry Footer */
@@ -143,7 +207,7 @@
       z-index: 10;
     }
     .metric-cell {
-      padding: 1rem 1.5rem;
+      padding: 0.9rem 1.25rem;
       border-right: 1px solid var(--border-line);
       display: flex;
       flex-direction: column;
@@ -194,7 +258,9 @@
   <header>
     <div class="brand-group">
       <h1 class="site-title">Signal &amp; Noise</h1>
-      <div class="site-subtitle">Herff Jones &middot; Order Entry Flow &middot; Realtime Routing</div>
+      <div class="site-subtitle">
+        Herff Jones &middot; Order Entry Flow &middot; <span class="inspect-badge">Hover to Inspect</span>
+      </div>
     </div>
 
     <div class="legend-bar">
@@ -228,8 +294,16 @@
   </header>
 
   <!-- Interactive Network Simulation -->
-  <main class="canvas-viewport">
+  <main class="canvas-viewport" id="viewport">
     <canvas id="flowCanvas"></canvas>
+    
+    <!-- Floating Inspector HUD -->
+    <div id="inspectHUD">
+      <div class="hud-title" id="hudTitle">Order Entry</div>
+      <div class="hud-tag" id="hudTag" style="color: var(--color-oracle);">Oracle Relational Validation</div>
+      <div class="hud-desc" id="hudDesc">Core validation node where order schema mismatches cause immediate operational latency.</div>
+      <div class="hud-stat" id="hudStat">LATENCY TAX: +4.2 hrs / order</div>
+    </div>
   </main>
 
   <!-- Bottom Diagnostic Telemetry -->
@@ -264,29 +338,126 @@
   <script>
     const canvas = document.getElementById('flowCanvas');
     const ctx = canvas.getContext('2d');
+    const viewport = document.getElementById('viewport');
+    const hud = document.getElementById('inspectHUD');
+    const hudTitle = document.getElementById('hudTitle');
+    const hudTag = document.getElementById('hudTag');
+    const hudDesc = document.getElementById('hudDesc');
+    const hudStat = document.getElementById('hudStat');
+
     let width, height;
+    let hoveredNode = null;
+    let mousePos = { x: -100, y: -100 };
 
     function resize() {
-      width = canvas.width = canvas.parentElement.clientWidth;
-      height = canvas.height = canvas.parentElement.clientHeight;
+      width = canvas.width = viewport.clientWidth;
+      height = canvas.height = viewport.clientHeight;
     }
     window.addEventListener('resize', resize);
     resize();
 
-    // System Nodes Layout
+    // Node Definitions with Diagnostic Copy
     function getNodes() {
       const cy = height * 0.44;
       return {
-        wcQueue:    { x: width * 0.06, y: cy, r: 28, label: 'WebCenter Queue', color: '#38bdf8' },
-        orderEntry: { x: width * 0.32, y: cy, r: 44, label: 'Order Entry', color: '#f87171' },
-        csHold:     { x: width * 0.32, y: cy + (height * 0.34), r: 38, label: 'CS Hold', sub: 'Oracle-Zendesk-Wrike-Teams', color: '#fbbf24' },
-        namelist:   { x: width * 0.62, y: cy, r: 32, label: 'Namelist', color: '#eab308' },
-        prepress:   { x: width * 0.82, y: cy, r: 26, label: 'Prepress', color: '#34d399' },
-        production: { x: width * 0.94, y: cy, r: 24, label: 'Production', color: '#34d399' }
+        wcQueue: {
+          id: 'wcQueue',
+          x: width * 0.06, y: cy, r: 28,
+          label: 'WebCenter Queue',
+          color: '#38bdf8',
+          tag: 'Digital Asset Intake',
+          desc: 'Automated ingestion funnel for customer artwork and order specs. Low friction during standard intake.',
+          stat: 'THROUGHPUT: 98.4% NORMAL'
+        },
+        orderEntry: {
+          id: 'orderEntry',
+          x: width * 0.32, y: cy, r: 48,
+          label: 'Order Entry',
+          color: '#f87171',
+          tag: 'Primary Bottleneck & Schema Check',
+          desc: 'Manual operator bridge between WebCenter and Oracle ERP. High cognitive load and repetitive data re-keying.',
+          stat: 'RE-ENTRY RATE: 34.2% REJECTED'
+        },
+        csHold: {
+          id: 'csHold',
+          x: width * 0.32, y: cy + (height * 0.34), r: 40,
+          label: 'CS Hold',
+          sub: 'Oracle · Zendesk · Wrike · Teams',
+          color: '#fbbf24',
+          tag: 'Customer Service Backchannel',
+          desc: 'Exception staging zone. Requires coordination across Zendesk tickets, Teams chats, and direct plant visits.',
+          stat: 'AVG HOLD DURATION: 18.6 HRS'
+        },
+        namelist: {
+          id: 'namelist',
+          x: width * 0.62, y: cy, r: 34,
+          label: 'Namelist',
+          color: '#eab308',
+          tag: 'Personalization Validation',
+          desc: 'Validation for student rosters, custom spellings, and engraving lines. Triggers frequent upstream loops.',
+          stat: 'EXCEPTION RATE: 14.8%'
+        },
+        prepress: {
+          id: 'prepress',
+          x: width * 0.82, y: cy, r: 28,
+          label: 'Prepress',
+          color: '#34d399',
+          tag: 'Plate & Art Preparation',
+          desc: 'Technical rasterization and color proofing before physical plate production.',
+          stat: 'HOLD TIME: 1.2 HRS'
+        },
+        production: {
+          id: 'production',
+          x: width * 0.94, y: cy, r: 24,
+          label: 'Production',
+          color: '#34d399',
+          tag: 'Industrial Floor Release',
+          desc: 'Final release to industrial manufacturing, binding, and distribution.',
+          stat: 'DISPATCH STATUS: ACTIVE'
+        }
       };
     }
 
-    // Packet System
+    // Mouse Tracking for Inspection Overlay
+    viewport.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mousePos.x = e.clientX - rect.left;
+      mousePos.y = e.clientY - rect.top;
+
+      const N = getNodes();
+      hoveredNode = null;
+
+      for (const key in N) {
+        const node = N[key];
+        const dist = Math.hypot(mousePos.x - node.x, mousePos.y - node.y);
+        if (dist <= node.r + 10) {
+          hoveredNode = node;
+          break;
+        }
+      }
+
+      if (hoveredNode) {
+        hud.classList.add('active');
+        hudTitle.textContent = hoveredNode.label;
+        hudTag.textContent = hoveredNode.tag;
+        hudTag.style.color = hoveredNode.color;
+        hudDesc.textContent = hoveredNode.desc;
+        hudStat.textContent = hoveredNode.stat;
+
+        // Position HUD
+        hud.style.left = `${hoveredNode.x}px`;
+        hud.style.top = `${hoveredNode.y - hoveredNode.r - 10}px`;
+      } else {
+        hud.classList.remove('active');
+      }
+    });
+
+    viewport.addEventListener('mouseleave', () => {
+      hoveredNode = null;
+      hud.classList.remove('active');
+    });
+
+    // Dynamic Packets
     let packets = [];
     const packetTypes = ['order', 'reentry', 'oracle', 'cs'];
 
@@ -295,7 +466,7 @@
       packets.push({
         type: type,
         progress: 0,
-        speed: 0.0018 + Math.random() * 0.0015,
+        speed: 0.0018 + Math.random() * 0.0014,
         loopCount: 0
       });
     }
@@ -304,19 +475,19 @@
       packets.push({
         type: packetTypes[Math.floor(Math.random() * packetTypes.length)],
         progress: Math.random(),
-        speed: 0.0018 + Math.random() * 0.0015,
+        speed: 0.0018 + Math.random() * 0.0014,
         loopCount: 0
       });
     }
-    setInterval(spawnPacket, 1200);
+    setInterval(spawnPacket, 1100);
 
     let tick = 0;
 
-    function drawDashedCurve(p1, p2, cp1, cp2, color) {
+    function drawDashedCurve(p1, p2, cp1, cp2, color, width = 1.5) {
       ctx.save();
       ctx.setLineDash([4, 6]);
       ctx.strokeStyle = color;
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = width;
       ctx.beginPath();
       ctx.moveTo(p1.x, p1.y);
       ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p2.x, p2.y);
@@ -347,10 +518,10 @@
       tick += 0.02;
       const N = getNodes();
 
-      // --- 1. Static Pipeline Grid & Curves ---
-      // Main Spine
-      ctx.strokeStyle = '#1e293b';
-      ctx.lineWidth = 2;
+      // --- 1. Pipeline Spine & Routing Arcs ---
+      // Main Spine (High-Contrast Slate)
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.moveTo(N.wcQueue.x, N.wcQueue.y);
       ctx.lineTo(N.production.x, N.production.y);
@@ -359,58 +530,84 @@
       // Teams / In-Person Backchannel (OE <-> CS Hold Left Loop)
       drawDashedCurve(
         N.orderEntry, N.csHold,
-        { x: N.orderEntry.x - 45, y: (N.orderEntry.y + N.csHold.y) / 2 },
-        { x: N.csHold.x - 45, y: (N.orderEntry.y + N.csHold.y) / 2 },
-        '#60a5fa'
+        { x: N.orderEntry.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 },
+        { x: N.csHold.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 },
+        '#60a5fa', 2
       );
 
       // Formal Rejection Loop (OE <-> CS Hold Right Loop)
       drawDashedCurve(
         N.csHold, N.orderEntry,
-        { x: N.csHold.x + 35, y: (N.orderEntry.y + N.csHold.y) / 2 },
-        { x: N.orderEntry.x + 35, y: (N.orderEntry.y + N.csHold.y) / 2 },
-        '#ef4444'
+        { x: N.csHold.x + 45, y: (N.orderEntry.y + N.csHold.y) / 2 },
+        { x: N.orderEntry.x + 45, y: (N.orderEntry.y + N.csHold.y) / 2 },
+        '#ef4444', 2
       );
 
       // Re-entry Arc (Namelist -> Order Entry)
       drawDashedCurve(
         N.namelist, N.orderEntry,
-        { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 80 },
-        { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 80 },
-        '#334155'
+        { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 90 },
+        { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 90 },
+        '#64748b', 1.5
       );
 
       // Prepress Re-entry Arc (Prepress -> Order Entry)
       drawDashedCurve(
         N.prepress, N.orderEntry,
-        { x: (N.prepress.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 120 },
-        { x: (N.prepress.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 120 },
-        '#242933'
+        { x: (N.prepress.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 130 },
+        { x: (N.prepress.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 130 },
+        '#475569', 1.5
       );
 
       // --- 2. Render System Nodes ---
       Object.values(N).forEach(node => {
+        const isHovered = (hoveredNode && hoveredNode.id === node.id);
+
         // Outer Translucent Zone
-        ctx.fillStyle = node.color + '10';
-        ctx.strokeStyle = node.color + '40';
-        ctx.lineWidth = 1.5;
+        ctx.fillStyle = node.color + (isHovered ? '25' : '12');
+        ctx.strokeStyle = node.color + (isHovered ? 'aa' : '50');
+        ctx.lineWidth = isHovered ? 2.5 : 1.5;
         ctx.beginPath();
-        ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+        ctx.arc(node.x, node.y, isHovered ? node.r + 4 : node.r, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
         // Inner Core Ring
         ctx.fillStyle = '#07090e';
-        ctx.strokeStyle = node.color;
+        ctx.strokeStyle = isHovered ? '#ffffff' : node.color;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(node.x, node.y, node.r * 0.45, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
+        // Sub-nodes inside Order Entry (WC & ORA)
+        if (node.id === 'orderEntry') {
+          // Left Subnode: WC
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(node.x - 16, node.y, 9, 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+          ctx.font = 'bold 8px "JetBrains Mono", monospace';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.fillText('WC', node.x - 16, node.y + 3);
+
+          // Right Subnode: ORA
+          ctx.fillStyle = 'rgba(248, 113, 113, 0.2)';
+          ctx.strokeStyle = '#f87171';
+          ctx.beginPath();
+          ctx.arc(node.x + 16, node.y, 9, 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText('ORA', node.x + 16, node.y + 3);
+        }
+
         // Labels
         ctx.font = '600 13px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = isHovered ? '#ffffff' : '#e2e8f0';
         ctx.textAlign = 'center';
         ctx.fillText(node.label, node.x, node.y + node.r + 20);
 
@@ -425,7 +622,7 @@
       ctx.font = '600 11px "JetBrains Mono", monospace';
       ctx.fillStyle = '#60a5fa';
       ctx.textAlign = 'right';
-      ctx.fillText('Teams / in-person', N.orderEntry.x - 55, (N.orderEntry.y + N.csHold.y) / 2);
+      ctx.fillText('Teams / in-person', N.orderEntry.x - 65, (N.orderEntry.y + N.csHold.y) / 2);
 
       // --- 3. Dynamic Moving Packets ---
       for (let i = packets.length - 1; i >= 0; i--) {
@@ -443,8 +640,8 @@
           // OE -> CS Hold -> OE loop
           color = '#fbbf24';
           const p0 = N.orderEntry, p3 = N.csHold;
-          const cp1 = { x: N.orderEntry.x - 45, y: (N.orderEntry.y + N.csHold.y) / 2 };
-          const cp2 = { x: N.csHold.x - 45, y: (N.orderEntry.y + N.csHold.y) / 2 };
+          const cp1 = { x: N.orderEntry.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 };
+          const cp2 = { x: N.csHold.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 };
 
           if (p.progress <= 0.5) {
             const pt = getBezierPoint(p.progress * 2, p0, cp1, cp2, p3);
@@ -458,7 +655,7 @@
           // Namelist -> Order Entry Top Arc
           color = '#eab308';
           const p0 = N.namelist, p3 = N.orderEntry;
-          const cp1 = { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 80 };
+          const cp1 = { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 90 };
           const pt = getBezierPoint(p.progress, p0, cp1, cp1, p3);
           px = pt.x; py = pt.y;
         } else {
