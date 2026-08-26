@@ -1,1 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signal & Noise — Workplace Dynamics & Systems Flow</title>
+  <style>
+    :root {
+      --bg: #090d13;
+      --surface: #131b26;
+      --surface-border: #3b4554;
+      --text: #e2e8f0;
+      --text-bright: #ffffff;
+      --text-muted: #94a3b8;
+      --accent-amber: #f59e0b;
+      --accent-blue: #38bdf8;
+      --accent-red: #f87171;
+      --accent-green: #4ade80;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
 
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 0 1.5rem 5rem;
+    }
+
+    .container { max-width: 1040px; margin: 0 auto; }
+
+    /* Top Navigation */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 0;
+      border-bottom: 2px solid var(--surface-border);
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    nav a { color: var(--accent-amber); text-decoration: none; transition: opacity 0.2s; }
+    nav a:hover { opacity: 0.8; text-decoration: underline; }
+
+    /* Header */
+    header { padding: 3.5rem 0 2rem; text-align: center; }
+    h1 {
+      font-size: 2.75rem;
+      color: var(--text-bright);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+    .subtitle {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 2rem;
+      line-height: 1.5;
+    }
+
+    /* Visualization Canvases */
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 340px;
+      background: var(--surface);
+      border: 2px solid var(--surface-border);
+      border-radius: 8px;
+      margin-bottom: 3.5rem;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+
+    /* Section Typography */
+    h2 {
+      font-size: 1.6rem;
+      color: var(--text-bright);
+      margin: 3rem 0 1rem;
+      font-weight: 600;
+      border-bottom: 2px solid var(--surface-border);
+      padding-bottom: 0.5rem;
+    }
+
+    /* System Cards */
+    .system-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 2px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .card:hover, .card.active {
+      border-color: var(--accent-amber);
+      transform: translateY(-3px);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .card-title { font-weight: 700; color: var(--text-bright); font-size: 1.15rem; }
+    .card-load { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--accent-amber); }
+    .load-bar {
+      height: 8px;
+      background: #0f172a;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+      border: 1px solid #334155;
+    }
+    .load-progress { height: 100%; background: var(--accent-amber); }
+    .card-desc { font-size: 0.98rem; color: var(--text); line-height: 1.5; }
+
+    /* Flow Container */
+    .flow-container {
+      background: var(--surface);
+      border: 2px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-top: 1.25rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Pattern Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .metric-card {
+      background: var(--surface);
+      border: 2px solid var(--surface-border);
+      padding: 1.5rem;
+      border-radius: 8px;
+    }
+    .metric-name {
+      font-size: 1rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--accent-blue);
+      margin-bottom: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .metric-desc { font-size: 0.95rem; color: var(--text); line-height: 1.5; }
+
+    footer {
+      margin-top: 5rem;
+      padding-top: 2rem;
+      border-top: 2px solid var(--surface-border);
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <nav>
+      <a href="../index.html">← Master Hub</a>
+      <span>ROOM 04 : FIELD OBSERVATORY</span>
+    </nav>
+
+    <header>
+      <h1>Signal & Noise</h1>
+      <p class="subtitle">Mapping communication flows, latency traps, and human friction points across industrial production systems.</p>
+    </header>
+
+    <!-- Network Canvas -->
+    <div class="canvas-container">
+      <canvas id="networkCanvas"></canvas>
+    </div>
+
+    <!-- Communication Pipeline -->
+    <h2>I. Order & Message Flow Routing</h2>
+    <p style="font-size: 1.05rem; color: var(--text); margin-bottom: 1rem;">
+      Simulated message transmission: <strong>Originator → Coordination → System Core → Decision → Action</strong>. Watch for latency at the system interface layer.
+    </p>
+    <div class="flow-container">
+      <canvas id="flowCanvas" height="220"></canvas>
+    </div>
+
+    <!-- System Map -->
+    <h2>II. Connected System Infrastructure</h2>
+    <div class="system-grid">
+      <div class="card" onclick="highlightSystem('oracle')">
+        <div class="card-header">
+          <span class="card-title">Oracle ERP</span>
+          <span class="card-load">88% LOAD</span>
+        </div>
+        <div class="load-bar"><div class="load-progress" style="width: 88%;"></div></div>
+        <p class="card-desc">Core relational backbone; high validation strictness creating downstream hold queues.</p>
+      </div>
+
+      <div class="card" onclick="highlightSystem('webcenter')">
+        <div class="card-header">
+          <span class="card-title">WebCenter</span>
+          <span class="card-load">65% LOAD</span>
+        </div>
+        <div class="load-bar"><div class="load-progress" style="width: 65%;"></div></div>
+        <p class="card-desc">Asset approval pipeline and customer proof routing; frequent re-entry iterations.</p>
+      </div>
+
+      <div class="card" onclick="highlightSystem('zendesk')">
+        <div class="card-header">
+          <span class="card-title">Zendesk</span>
+          <span class="card-load">92% LOAD</span>
+        </div>
+        <div class="load-bar"><div class="load-progress" style="width: 92%; background: var(--accent-red);"></div></div>
+        <p class="card-desc">Triage intake funnel; high-velocity exception handling and customer inquiries.</p>
+      </div>
+
+      <div class="card" onclick="highlightSystem('wrike')">
+        <div class="card-header">
+          <span class="card-title">Wrike</span>
+          <span class="card-load">45% LOAD</span>
+        </div>
+        <div class="load-bar"><div class="load-progress" style="width: 45%;"></div></div>
+        <p class="card-desc">Task staging and project scheduling; manual handoffs between department leads.</p>
+      </div>
+
+      <div class="card" onclick="highlightSystem('teams')">
+        <div class="card-header">
+          <span class="card-title">MS Teams / Chat</span>
+          <span class="card-load">78% LOAD</span>
+        </div>
+        <div class="load-bar"><div class="load-progress" style="width: 78%;"></div></div>
+        <p class="card-desc">Informal backchannels; critical operational resolutions lost to unsearchable chats.</p>
+      </div>
+
+      <div class="card" onclick="highlightSystem('email')">
+        <div class="card-header">
+          <span class="card-title">Direct Email</span>
+          <span class="card-load">84% LOAD</span>
+        </div>
+        <div class="load-bar"><div class="load-progress" style="width: 84%; background: var(--accent-amber);"></div></div>
+        <p class="card-desc">Siloed message chains; single-point-of-failure communication dependencies.</p>
+      </div>
+    </div>
+
+    <!-- Bottleneck Pattern Metrics -->
+    <h2>III. Friction & Pattern Metrics</h2>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-name">Re-entry Tax</div>
+        <p class="metric-desc">The computational and cognitive cost of bouncing orders back to intake for minor schema omissions.</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-name">Dark Communication</div>
+        <p class="metric-desc">High-value exceptions solved via instant message rather than documented system updates.</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-name">Load-Bearing Person</div>
+        <p class="metric-desc">Single human nodes holding custom procedural knowledge necessary to bridge disconnected tools.</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-name">Workaround Loop</div>
+        <p class="metric-desc">Informal side-channels established by teams to bypass high-friction system checkpoints.</p>
+      </div>
+    </div>
+
+    <footer>
+      <span>kellis-web.com &middot; Field Observatory &middot; Systems Architecture</span>
+    </footer>
+  </div>
+
+  <script>
+    // 1. High-Contrast Ambient Network Canvas
+    const netCanvas = document.getElementById('networkCanvas');
+    const netCtx = netCanvas.getContext('2d');
+    let width, height;
+
+    const nodes = [
+      { label: 'Plant Ops', x: 0.15, y: 0.35, r: 10 },
+      { label: 'Coordinator', x: 0.35, y: 0.65, r: 12 },
+      { label: 'Liaison', x: 0.50, y: 0.28, r: 13 },
+      { label: 'Prepress', x: 0.65, y: 0.72, r: 11 },
+      { label: 'Customer Lead', x: 0.85, y: 0.38, r: 10 },
+      { label: 'QA / Review', x: 0.45, y: 0.85, r: 9 }
+    ];
+
+    function resizeNet() {
+      width = netCanvas.width = netCanvas.parentElement.clientWidth;
+      height = netCanvas.height = netCanvas.parentElement.clientHeight;
+    }
+    window.addEventListener('resize', resizeNet);
+    resizeNet();
+
+    let pulse = 0;
+    function drawNetwork() {
+      netCtx.clearRect(0, 0, width, height);
+      pulse += 0.035;
+
+      // Draw Connection Lines (Thick, High Contrast)
+      netCtx.strokeStyle = '#475569';
+      netCtx.lineWidth = 3;
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          netCtx.beginPath();
+          netCtx.moveTo(nodes[i].x * width, nodes[i].y * height);
+          netCtx.lineTo(nodes[j].x * width, nodes[j].y * height);
+          netCtx.stroke();
+        }
+      }
+
+      // Draw Nodes & Labels
+      nodes.forEach((node, idx) => {
+        const nx = node.x * width;
+        const ny = node.y * height;
+        const pSize = Math.sin(pulse + idx) * 3;
+
+        // Node Glow Ring
+        netCtx.strokeStyle = '#f59e0b';
+        netCtx.lineWidth = 3;
+        netCtx.beginPath();
+        netCtx.arc(nx, ny, node.r + pSize + 4, 0, Math.PI * 2);
+        netCtx.stroke();
+
+        // Solid Node Core
+        netCtx.fillStyle = '#ffffff';
+        netCtx.beginPath();
+        netCtx.arc(nx, ny, node.r + pSize, 0, Math.PI * 2);
+        netCtx.fill();
+
+        // Node Label (Bolder, Larger Text)
+        netCtx.font = 'bold 14px ui-monospace, monospace';
+        netCtx.fillStyle = '#f8fafc';
+        netCtx.textAlign = 'center';
+        netCtx.fillText(node.label, nx, ny + node.r + 24);
+      });
+
+      requestAnimationFrame(drawNetwork);
+    }
+    drawNetwork();
+
+    // 2. High-Contrast Flow Simulator Canvas
+    const flowCanvas = document.getElementById('flowCanvas');
+    const flowCtx = flowCanvas.getContext('2d');
+    let fWidth = flowCanvas.width = flowCanvas.parentElement.clientWidth;
+    let fHeight = flowCanvas.height = 220;
+
+    window.addEventListener('resize', () => {
+      fWidth = flowCanvas.width = flowCanvas.parentElement.clientWidth;
+    });
+
+    const stages = [
+      { name: 'Originator', x: 0.1 },
+      { name: 'Coordination', x: 0.3 },
+      { name: 'System Core', x: 0.5 },
+      { name: 'Decision', x: 0.7 },
+      { name: 'Action', x: 0.9 }
+    ];
+
+    let packets = [];
+    function spawnPacket() {
+      packets.push({ x: 0.1, speed: 0.004 + Math.random() * 0.002 });
+    }
+    setInterval(spawnPacket, 1200);
+
+    function drawFlow() {
+      flowCtx.clearRect(0, 0, fWidth, fHeight);
+
+      // High-Contrast Pipeline Line
+      flowCtx.strokeStyle = '#64748b';
+      flowCtx.lineWidth = 4;
+      flowCtx.beginPath();
+      flowCtx.moveTo(0.1 * fWidth, fHeight / 2);
+      flowCtx.lineTo(0.9 * fWidth, fHeight / 2);
+      flowCtx.stroke();
+
+      // Stages
+      stages.forEach((stg) => {
+        const sx = stg.x * fWidth;
+
+        // Stage Circle
+        flowCtx.fillStyle = '#1e293b';
+        flowCtx.strokeStyle = '#38bdf8';
+        flowCtx.lineWidth = 3;
+        flowCtx.beginPath();
+        flowCtx.arc(sx, fHeight / 2, 12, 0, Math.PI * 2);
+        flowCtx.fill();
+        flowCtx.stroke();
+
+        // Stage Labels
+        flowCtx.font = 'bold 13px ui-monospace, monospace';
+        flowCtx.fillStyle = '#f8fafc';
+        flowCtx.textAlign = 'center';
+        flowCtx.fillText(stg.name, sx, fHeight / 2 + 32);
+      });
+
+      // Moving Data Packets (Larger, Glowing Green)
+      for (let i = packets.length - 1; i >= 0; i--) {
+        let p = packets[i];
+        let currentSpeed = p.speed;
+        
+        // System Core Latency
+        if (p.x > 0.45 && p.x < 0.55) {
+          currentSpeed *= 0.35;
+        }
+
+        p.x += currentSpeed;
+
+        flowCtx.fillStyle = '#4ade80';
+        flowCtx.strokeStyle = '#ffffff';
+        flowCtx.lineWidth = 2;
+        flowCtx.beginPath();
+        flowCtx.arc(p.x * fWidth, fHeight / 2, 7, 0, Math.PI * 2);
+        flowCtx.fill();
+        flowCtx.stroke();
+
+        if (p.x >= 0.9) {
+          packets.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(drawFlow);
+    }
+    drawFlow();
+
+    function highlightSystem(sys) {
+      console.log('Active System: ' + sys);
+    }
+  </script>
+</body>
+</html>
