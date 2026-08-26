@@ -3,18 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Signal & Noise — Herff Jones Order Entry Flow</title>
+  <title>Signal & Noise — Herff Jones Order Entry Simulation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #07090e;
+      --surface: #0d1117;
+      --border-line: #1e293b;
+      --border-accent: #334155;
       --text-bright: #ffffff;
       --text-main: #e2e8f0;
       --text-dim: #94a3b8;
-      --border-line: #1e293b;
-      --border-accent: #334155;
 
       --color-order: #38bdf8;
       --color-cs: #fbbf24;
@@ -42,43 +43,99 @@
       user-select: none;
     }
 
-    /* Top Telemetry Header */
+    /* Top Sub-Bar */
+    .top-bar {
+      background: #0b0f17;
+      border-bottom: 1px solid var(--border-line);
+      padding: 0.35rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+    }
+    .top-bar a { color: var(--color-order); text-decoration: none; font-weight: 600; }
+    .top-bar .active-mode { color: var(--color-cs); font-weight: 700; }
+
     header {
-      padding: 1.25rem 2rem;
+      padding: 0.85rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid var(--border-line);
       z-index: 10;
     }
-    .brand-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-    }
+    .brand-group { display: flex; flex-direction: column; gap: 0.15rem; }
     .site-title {
       font-family: var(--font-serif);
-      font-size: 1.85rem;
+      font-size: 1.75rem;
       font-weight: 400;
       color: var(--text-bright);
-      letter-spacing: -0.01em;
     }
     .site-subtitle {
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       color: var(--text-dim);
-      letter-spacing: 0.14em;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       font-weight: 600;
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
-    .site-subtitle .inspect-badge {
-      color: var(--color-cs);
-      background: rgba(251, 191, 36, 0.12);
+    .site-subtitle .dataset-badge {
+      color: var(--color-action);
+      background: rgba(52, 211, 153, 0.12);
       padding: 0.1rem 0.4rem;
-      border: 1px solid rgba(251, 191, 36, 0.3);
+      border: 1px solid rgba(52, 211, 153, 0.3);
       border-radius: 2px;
+    }
+
+    /* Interactive Simulation Controls */
+    .sim-controls {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      background: rgba(15, 23, 42, 0.7);
+      padding: 0.4rem 1rem;
+      border: 1px solid var(--border-line);
+      border-radius: 4px;
+    }
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+    }
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      gap: 0.5rem;
+    }
+    .control-header span:last-child { color: var(--color-cs); }
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 105px;
+      height: 4px;
+      background: #1e293b;
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--color-order);
+      cursor: pointer;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
     .share-btn {
       background: transparent;
@@ -100,34 +157,7 @@
       color: var(--color-cs);
     }
 
-    /* Top Legend Bar */
-    .legend-bar {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      font-size: 0.72rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-weight: 600;
-    }
-    .legend-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: var(--text-main);
-    }
-    .legend-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-    .legend-dash {
-      width: 14px;
-      height: 2px;
-      border-top: 2px dashed;
-    }
-
-    /* Canvas Viewport */
+    /* Main Viewport */
     .canvas-viewport {
       flex: 1;
       position: relative;
@@ -137,67 +167,113 @@
     }
     canvas {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       display: block;
     }
 
-    /* Inspection HUD Tooltip */
+    /* Station Hover HUD */
     #inspectHUD {
       position: absolute;
       pointer-events: none;
       opacity: 0;
       transform: translate(-50%, -120%);
       transition: opacity 0.15s ease, transform 0.15s ease;
-      background: rgba(15, 23, 42, 0.96);
+      background: rgba(13, 17, 23, 0.98);
       border: 1px solid var(--border-accent);
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8), 0 0 15px rgba(56, 189, 248, 0.15);
+      box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.9), 0 0 15px rgba(56, 189, 248, 0.15);
       border-radius: 4px;
-      padding: 1rem 1.25rem;
-      min-width: 270px;
-      max-width: 320px;
+      padding: 1.15rem 1.4rem;
+      min-width: 320px;
+      max-width: 380px;
       z-index: 50;
     }
-    #inspectHUD.active {
-      opacity: 1;
-      transform: translate(-50%, -105%);
-    }
+    #inspectHUD.active { opacity: 1; transform: translate(-50%, -105%); }
     .hud-title {
       font-family: var(--font-serif);
-      font-size: 1.3rem;
+      font-size: 1.35rem;
       font-weight: 600;
       color: var(--text-bright);
       line-height: 1.1;
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.3rem;
     }
     .hud-tag {
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       font-family: var(--font-mono);
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.6rem;
       display: inline-block;
     }
     .hud-desc {
-      font-size: 0.78rem;
+      font-size: 0.82rem;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: #cbd5e1;
-      line-height: 1.45;
+      line-height: 1.5;
       border-top: 1px solid var(--border-line);
-      padding-top: 0.5rem;
+      padding-top: 0.6rem;
     }
     .hud-stat {
-      margin-top: 0.5rem;
-      font-size: 0.7rem;
+      margin-top: 0.6rem;
+      font-size: 0.72rem;
       font-family: var(--font-mono);
       color: var(--color-cs);
       font-weight: 600;
     }
 
-    /* Bottom Status Telemetry Footer */
+    /* Shop Ticket Modal */
+    #ticketModal {
+      position: absolute;
+      display: none;
+      background: #0f172a;
+      border: 1px solid var(--color-order);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+      border-radius: 4px;
+      width: 340px;
+      padding: 1.25rem;
+      z-index: 100;
+      font-size: 0.78rem;
+    }
+    .ticket-header {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-accent);
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .ticket-job { font-size: 1.1rem; color: var(--text-bright); font-weight: 700; }
+    .ticket-close { color: var(--text-dim); cursor: pointer; font-size: 1.1rem; }
+    .ticket-row { display: flex; justify-content: space-between; margin-bottom: 0.4rem; }
+    .ticket-label { color: var(--text-dim); }
+    .ticket-value { color: var(--text-bright); font-weight: 600; }
+    .ticket-notes {
+      margin-top: 0.6rem;
+      padding: 0.5rem;
+      background: rgba(0,0,0,0.4);
+      border-left: 2px solid var(--color-cs);
+      font-size: 0.72rem;
+      color: #cbd5e1;
+    }
+
+    /* Slide-out Partner Drawer */
+    #repDrawer {
+      position: absolute;
+      right: -440px;
+      top: 0;
+      width: 420px;
+      height: 100%;
+      background: rgba(13, 17, 23, 0.98);
+      border-left: 1px solid var(--border-accent);
+      box-shadow: -10px 0 30px rgba(0,0,0,0.8);
+      z-index: 80;
+      transition: right 0.3s ease;
+      padding: 1.5rem;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+    }
+
+    /* Calibrated Footer Telemetry */
     footer {
       border-top: 1px solid var(--border-line);
       display: grid;
@@ -206,127 +282,181 @@
       z-index: 10;
     }
     .metric-cell {
-      padding: 0.9rem 1.25rem;
+      padding: 0.75rem 1rem;
       border-right: 1px solid var(--border-line);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
       text-align: center;
     }
     .metric-val {
       font-family: var(--font-serif);
-      font-size: 2.2rem;
-      font-weight: 400;
+      font-size: 1.9rem;
       font-style: italic;
       color: var(--text-bright);
       line-height: 1;
-      margin-bottom: 0.35rem;
+      margin-bottom: 0.25rem;
     }
     .metric-lbl {
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       color: var(--text-dim);
-      letter-spacing: 0.12em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       font-weight: 600;
     }
     .footer-actions {
-      padding: 1rem 1.5rem;
+      padding: 0.75rem 1.25rem;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      font-size: 0.72rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      font-weight: 600;
+      gap: 0.75rem;
+      font-size: 0.7rem;
     }
-    .footer-actions a {
-      color: var(--text-bright);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .footer-actions a:hover {
-      color: var(--color-cs);
-    }
+    .footer-actions a { color: var(--text-bright); text-decoration: none; }
+    .footer-actions a:hover { color: var(--color-cs); }
   </style>
 </head>
 <body>
+
+  <div class="top-bar">
+    <div>
+      <span style="color: var(--text-dim);">SYSTEM MODE:</span>
+      <span class="active-mode">Empirical Model (49,698 Lines Indexed)</span>
+    </div>
+    <div>
+      <a href="index.html">&larr; Return to Standard View</a>
+    </div>
+  </div>
 
   <header>
     <div class="brand-group">
       <h1 class="site-title">Signal &amp; Noise</h1>
       <div class="site-subtitle">
-        Herff Jones &middot; Order Entry Flow &middot; <span class="inspect-badge">Hover to Inspect</span>
+        Herff Jones &middot; Order Flow Simulation &middot; <span class="dataset-badge">Calibrated</span>
       </div>
     </div>
 
-    <div class="legend-bar">
-      <div class="legend-item">
-        <span class="legend-dot" style="background: var(--color-order);"></span>
-        <span>Order Moving</span>
+    <div class="sim-controls">
+      <div class="control-item">
+        <div class="control-header">
+          <span>PROOFING RATE</span>
+          <span id="lblProofRate">50.1%</span>
+        </div>
+        <input type="range" id="sliderProofRate" min="5" max="80" value="50">
       </div>
-      <div class="legend-item">
-        <span class="legend-dot" style="background: var(--color-cs);"></span>
-        <span>CS Hold</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-dot" style="background: var(--color-oracle);"></span>
-        <span>Oracle / Error</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-dot" style="background: var(--color-reentry);"></span>
-        <span>WC&harr;Oracle Re-entry</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-dash" style="color: var(--color-teams);"></span>
-        <span>Teams / In-Person</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-dash" style="color: var(--color-reject);"></span>
-        <span>Formal Reject</span>
+      <div class="control-item">
+        <div class="control-header">
+          <span>PIPELINE VELOCITY</span>
+          <span id="lblSpeed">1.0x</span>
+        </div>
+        <input type="range" id="sliderSpeed" min="5" max="25" value="10">
       </div>
     </div>
 
-    <button class="share-btn" onclick="navigator.clipboard.writeText(window.location.href); alert('Link copied to clipboard');">Share &uarr;</button>
+    <div class="header-actions">
+      <button class="share-btn" onclick="toggleRepDrawer()">Scorecard &rarr;</button>
+      <button class="share-btn" onclick="navigator.clipboard.writeText(window.location.href); alert('Link copied to clipboard');">Share &uarr;</button>
+    </div>
   </header>
 
   <main class="canvas-viewport" id="viewport">
     <canvas id="flowCanvas"></canvas>
     
+    <!-- Station Hover HUD -->
     <div id="inspectHUD">
       <div class="hud-title" id="hudTitle">Order Entry</div>
-      <div class="hud-tag" id="hudTag" style="color: var(--color-oracle);">Oracle Relational Validation</div>
-      <div class="hud-desc" id="hudDesc">Manual operator bridge between WebCenter and Oracle ERP. High cognitive load and repetitive data re-keying.</div>
-      <div class="hud-stat" id="hudStat">RE-ENTRY RATE: 34.2% REJECTED</div>
+      <div class="hud-tag" id="hudTag" style="color: var(--color-oracle);">Primary Bottleneck</div>
+      <div class="hud-desc" id="hudDesc">Manual operator bridge between WebCenter and Oracle ERP.</div>
+      <div class="hud-stat" id="hudStat">STATUS: ACTIVE</div>
+    </div>
+
+    <!-- Shop Ticket Inspector Modal -->
+    <div id="ticketModal">
+      <div class="ticket-header">
+        <span class="ticket-job" id="tJob">JOB #505726</span>
+        <span class="ticket-close" onclick="closeTicket()">&times;</span>
+      </div>
+      <div class="ticket-row"><span class="ticket-label">CUSTOMER:</span><span class="ticket-value" id="tCust">1092994 — Beta HS</span></div>
+      <div class="ticket-row"><span class="ticket-label">ORDER TYPE:</span><span class="ticket-value" id="tType">STANDARD (95.3%)</span></div>
+      <div class="ticket-row"><span class="ticket-label">PRIMARY ATTR:</span><span class="ticket-value" id="tItem">IN83602A (Cover)</span></div>
+      <div class="ticket-row"><span class="ticket-label">CSM / REP:</span><span class="ticket-value" id="tCsm">2137 CRYSTAL</span></div>
+      <div class="ticket-row"><span class="ticket-label">LEAD TIME:</span><span class="ticket-value" id="tLead">32.95 Days (Avg)</span></div>
+      <div class="ticket-notes" id="tNotes">BLANK DIPLOMAS / CERTIFICATE REQUEST</div>
+    </div>
+
+    <!-- Partner Defect Scorecard Drawer -->
+    <div id="repDrawer">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-line); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+        <div>
+          <h3 style="font-family: var(--font-serif); font-size: 1.35rem; color: var(--text-bright);">Partner Defect Index</h3>
+          <div style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em;">Sales Rep Quality Scorecard</div>
+        </div>
+        <button onclick="toggleRepDrawer()" style="background: transparent; border: none; color: var(--text-dim); font-size: 1.4rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="font-size: 0.75rem; color: #cbd5e1; line-height: 1.4; margin-bottom: 1.25rem;">
+        Baseline remake average across 49,698 lines is <strong style="color: var(--color-order);">4.15%</strong>. High variance reflects disparity in customer intake quality and custom instruction compliance.
+      </div>
+
+      <div style="font-size: 0.68rem; font-weight: 700; color: var(--color-oracle); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.08em;">High Exception Outliers (&gt;5.5%)</div>
+      <div style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.5rem;">
+        <div style="background: rgba(248, 113, 113, 0.08); border: 1px solid rgba(248, 113, 113, 0.2); padding: 0.5rem 0.75rem; border-radius: 3px; display: flex; justify-content: space-between; font-size: 0.72rem;">
+          <span>LLC, MDC &amp; ASSOCIATES</span>
+          <span style="color: var(--color-oracle); font-weight: 700;">8.28% (40 remakes)</span>
+        </div>
+        <div style="background: rgba(248, 113, 113, 0.08); border: 1px solid rgba(248, 113, 113, 0.2); padding: 0.5rem 0.75rem; border-radius: 3px; display: flex; justify-content: space-between; font-size: 0.72rem;">
+          <span>NOTARO, PATRICIA</span>
+          <span style="color: var(--color-oracle); font-weight: 700;">7.77% (38 remakes)</span>
+        </div>
+        <div style="background: rgba(248, 113, 113, 0.08); border: 1px solid rgba(248, 113, 113, 0.2); padding: 0.5rem 0.75rem; border-radius: 3px; display: flex; justify-content: space-between; font-size: 0.72rem;">
+          <span>THOMPSON, KIRK</span>
+          <span style="color: var(--color-oracle); font-weight: 700;">6.93% (73 remakes)</span>
+        </div>
+        <div style="background: rgba(248, 113, 113, 0.08); border: 1px solid rgba(248, 113, 113, 0.2); padding: 0.5rem 0.75rem; border-radius: 3px; display: flex; justify-content: space-between; font-size: 0.72rem;">
+          <span>INC, THE WATERS GROUP</span>
+          <span style="color: var(--color-oracle); font-weight: 700;">6.53% (23 remakes)</span>
+        </div>
+      </div>
+
+      <div style="font-size: 0.68rem; font-weight: 700; color: var(--color-action); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.08em;">Benchmark High-Volume Performers (&lt;3.5%)</div>
+      <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+        <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.2); padding: 0.5rem 0.75rem; border-radius: 3px; display: flex; justify-content: space-between; font-size: 0.72rem;">
+          <span>GRADUATE SERVICE MS-TN</span>
+          <span style="color: var(--color-action); font-weight: 700;">2.92% (26 remakes)</span>
+        </div>
+        <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.2); padding: 0.5rem 0.75rem; border-radius: 3px; display: flex; justify-content: space-between; font-size: 0.72rem;">
+          <span>LLC, SHREWSBURY'S GRAD SUP</span>
+          <span style="color: var(--color-action); font-weight: 700;">3.03% (33 remakes)</span>
+        </div>
+        <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.2); padding: 0.5rem 0.75rem; border-radius: 3px; display: flex; justify-content: space-between; font-size: 0.72rem;">
+          <span>MIAMI GRAD. SERV INC</span>
+          <span style="color: var(--color-action); font-weight: 700;">3.30% (174 remakes)</span>
+        </div>
+      </div>
     </div>
   </main>
 
   <footer>
     <div class="metric-cell">
-      <div class="metric-val" id="valInTransit">0</div>
-      <div class="metric-lbl">In Transit</div>
+      <div class="metric-val" id="valInTransit">49,698</div>
+      <div class="metric-lbl">Total Dataset Lines</div>
     </div>
     <div class="metric-cell">
-      <div class="metric-val" id="valReentry">0</div>
-      <div class="metric-lbl">WC&harr;Oracle Trips</div>
+      <div class="metric-val" id="valReentry">2,063</div>
+      <div class="metric-lbl">Remake / Reworks (4.15%)</div>
     </div>
     <div class="metric-cell">
-      <div class="metric-val" id="valCsHold">0</div>
-      <div class="metric-lbl">CS Hold</div>
+      <div class="metric-val" id="valCsHold">2,624</div>
+      <div class="metric-lbl">DNS / PDF Holds (5.28%)</div>
     </div>
     <div class="metric-cell">
-      <div class="metric-val" id="valOracleError">0</div>
-      <div class="metric-lbl">Oracle Error</div>
+      <div class="metric-val" id="valOracleError">24,918</div>
+      <div class="metric-lbl">Proofs Required (50.14%)</div>
     </div>
     <div class="metric-cell">
-      <div class="metric-val" id="valToProd">0</div>
-      <div class="metric-lbl">To Production</div>
+      <div class="metric-val" id="valToProd">32.9</div>
+      <div class="metric-lbl">Avg Lead Days</div>
     </div>
     <div class="footer-actions">
       <a href="../index.html">&larr; Cabinet</a>
-      <span style="color: var(--border-accent);">&middot;</span>
-      <a href="#" onclick="resetTelemetry(); return false;">Reset</a>
+      <span>&middot;</span>
+      <a href="#" onclick="resetTelemetry(); return false;">Reset Live Flow</a>
     </div>
   </footer>
 
@@ -335,33 +465,46 @@
     const ctx = canvas.getContext('2d');
     const viewport = document.getElementById('viewport');
     const hud = document.getElementById('inspectHUD');
-    const hudTitle = document.getElementById('hudTitle');
-    const hudTag = document.getElementById('hudTag');
-    const hudDesc = document.getElementById('hudDesc');
-    const hudStat = document.getElementById('hudStat');
+    const ticketModal = document.getElementById('ticketModal');
 
-    // Telemetry DOM elements
-    const elInTransit = document.getElementById('valInTransit');
-    const elReentry = document.getElementById('valReentry');
-    const elCsHold = document.getElementById('valCsHold');
-    const elOracleError = document.getElementById('valOracleError');
-    const elToProd = document.getElementById('valToProd');
+    const sliderProof = document.getElementById('sliderProofRate');
+    const sliderSpeed = document.getElementById('sliderSpeed');
+    const lblProof = document.getElementById('lblProofRate');
+    const lblSpeed = document.getElementById('lblSpeed');
 
-    let totalReentryTrips = 131;
-    let totalCsHolds = 13;
-    let totalOracleErrors = 11;
-    let totalToProd = 0;
+    let simProofRate = 0.5014;
+    let simSpeedMultiplier = 1.0;
+
+    sliderProof.addEventListener('input', (e) => {
+      simProofRate = e.target.value / 100;
+      lblProof.textContent = `${e.target.value}%`;
+    });
+    sliderSpeed.addEventListener('input', (e) => {
+      simSpeedMultiplier = e.target.value / 10;
+      lblSpeed.textContent = `${simSpeedMultiplier.toFixed(1)}x`;
+    });
+
+    let liveReentries = 2063;
+    let liveCsHolds = 2624;
+    let liveProofHits = 24918;
 
     function resetTelemetry() {
-      totalReentryTrips = 0;
-      totalCsHolds = 0;
-      totalOracleErrors = 0;
-      totalToProd = 0;
+      liveReentries = 0;
+      liveCsHolds = 0;
+      liveProofHits = 0;
       packets = [];
+    }
+
+    let drawerOpen = false;
+    function toggleRepDrawer() {
+      const drawer = document.getElementById('repDrawer');
+      drawerOpen = !drawerOpen;
+      drawer.style.right = drawerOpen ? '0px' : '-440px';
     }
 
     let width, height;
     let hoveredNode = null;
+    let selectedPacket = null;
     let mousePos = { x: -100, y: -100 };
 
     function resize() {
@@ -375,130 +518,84 @@
       const cy = height * 0.44;
       return {
         wcQueue: {
-          id: 'wcQueue',
-          x: width * 0.06, y: cy, r: 28,
-          label: 'WebCenter Queue',
-          color: '#38bdf8',
-          tag: 'Digital Asset Intake',
-          desc: 'Automated ingestion funnel for customer artwork and order specs. Low friction during standard intake.',
-          stat: 'THROUGHPUT: 98.4% NORMAL'
+          id: 'wcQueue', x: width * 0.06, y: cy, r: 28,
+          label: 'WebCenter Queue', color: '#38bdf8',
+          tag: 'Digital Asset Intake (48,023 Distinct Jobs)',
+          desc: 'Automated ingestion portal for incoming customer artwork, covers, and diploma orders. 95.25% standard orders.',
+          stat: 'THROUGHPUT: 49,698 TOTAL LINE ITEMS'
         },
         orderEntry: {
-          id: 'orderEntry',
-          x: width * 0.32, y: cy, r: 48,
-          label: 'Order Entry',
-          color: '#f87171',
-          tag: 'Primary Bottleneck & Schema Check',
-          desc: 'Manual operator bridge between WebCenter and Oracle ERP. High cognitive load and repetitive data re-keying.',
-          stat: 'RE-ENTRY RATE: 34.2% REJECTED'
+          id: 'orderEntry', x: width * 0.32, y: cy, r: 48,
+          label: 'Order Entry', color: '#f87171',
+          tag: 'Primary Bottleneck & Schema Hub',
+          desc: 'Manual operator bridge between WebCenter and Oracle ERP. High cognitive load resolving custom instructions (Blank certs, Rush/NIH).',
+          stat: 'PROOFING LOAD: 50.14% REQUIRED'
         },
         csHold: {
-          id: 'csHold',
-          x: width * 0.32, y: cy + (height * 0.34), r: 40,
-          label: 'CS Hold',
-          sub: 'Oracle · Zendesk · Wrike · Teams',
-          color: '#fbbf24',
-          tag: 'Customer Service Backchannel',
-          desc: 'Exception staging zone. Requires coordination across Zendesk tickets, Teams chats, and direct plant visits.',
-          stat: 'AVG HOLD DURATION: 18.6 HRS'
+          id: 'csHold', x: width * 0.32, y: cy + (height * 0.34), r: 40,
+          label: 'CS Hold', sub: 'Oracle · Zendesk · Wrike · Teams', color: '#fbbf24',
+          tag: 'DNS / PDF / Special Instruction Loop (5.28%)',
+          desc: 'Staging zone for PDF Only ($0 pricing), Do Not Ship, and signature/dateline clarifications via Wrike and Teams.',
+          stat: 'EXCEPTION VOLUME: 2,624 ACTIVE LINES'
         },
         namelist: {
-          id: 'namelist',
-          x: width * 0.62, y: cy, r: 34,
-          label: 'Namelist',
-          color: '#eab308',
-          tag: 'Personalization Validation',
-          desc: 'Validation for student rosters, custom spellings, and engraving lines. Triggers frequent upstream loops.',
-          stat: 'EXCEPTION RATE: 14.8%'
+          id: 'namelist', x: width * 0.62, y: cy, r: 34,
+          label: 'Namelist', color: '#eab308',
+          tag: 'Roster & Personalization Linking',
+          desc: 'Formats student roster CSVs. Discrepancies in 10.77% blank diploma requests trigger upstream verification.',
+          stat: 'AVG DAYS TO CONFIRM: 32.95 DAYS'
         },
         prepress: {
-          id: 'prepress',
-          x: width * 0.82, y: cy, r: 28,
-          label: 'Prepress',
-          color: '#34d399',
-          tag: 'Plate & Art Preparation',
-          desc: 'Technical rasterization and color proofing before physical plate production.',
-          stat: 'HOLD TIME: 1.2 HRS'
+          id: 'prepress', x: width * 0.82, y: cy, r: 28,
+          label: 'Prepress', color: '#34d399',
+          tag: 'Plate Generation & Technical Proofing',
+          desc: '50.14% of pipeline routes through digital proof approval before physical manufacturing release.',
+          stat: 'REMAKE / REWORK RATE: 4.15%'
         },
         production: {
-          id: 'production',
-          x: width * 0.94, y: cy, r: 24,
-          label: 'Production',
-          color: '#34d399',
-          tag: 'Industrial Floor Release',
-          desc: 'Final release to industrial manufacturing, binding, and distribution.',
-          stat: 'DISPATCH STATUS: ACTIVE'
+          id: 'production', x: width * 0.94, y: cy, r: 24,
+          label: 'Production', color: '#34d399',
+          tag: 'Manufacturing, Binding & Dispatch',
+          desc: 'Physical printing, casing, and carrier pickup. Average creation to scheduled ship: 59.95 days.',
+          stat: 'DISPATCH STATUS: UNINTERRUPTED'
         }
       };
     }
 
-    viewport.addEventListener('mousemove', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      mousePos.x = e.clientX - rect.left;
-      mousePos.y = e.clientY - rect.top;
-
-      const N = getNodes();
-      hoveredNode = null;
-
-      for (const key in N) {
-        const node = N[key];
-        const dist = Math.hypot(mousePos.x - node.x, mousePos.y - node.y);
-        if (dist <= node.r + 10) {
-          hoveredNode = node;
-          break;
-        }
-      }
-
-      if (hoveredNode) {
-        hud.classList.add('active');
-        hudTitle.textContent = hoveredNode.label;
-        hudTag.textContent = hoveredNode.tag;
-        hudTag.style.color = hoveredNode.color;
-        hudDesc.textContent = hoveredNode.desc;
-        hudStat.textContent = hoveredNode.stat;
-        hud.style.left = `${hoveredNode.x}px`;
-        hud.style.top = `${hoveredNode.y - hoveredNode.r - 10}px`;
-      } else {
-        hud.classList.remove('active');
-      }
-    });
-
-    viewport.addEventListener('mouseleave', () => {
-      hoveredNode = null;
-      hud.classList.remove('active');
-    });
-
-    // --- State-Machine Order Simulation Engine ---
-    let packets = [];
+    const shopTicketLibrary = [
+      { job: '505726', cust: '1092994 — Beta High School', type: 'STANDARD (95.3%)', item: 'IN83602A (Cover)', csm: '2137 CRYSTAL', notes: 'BLANK DIPLOMA / CERTIFICATE REQUEST (10.77%)' },
+      { job: '573188', cust: '1218449 — St. Vincent Academy', type: 'STANDARD (95.3%)', item: 'CV05689J (Mini Diploma)', csm: '2787 CARA', notes: 'NIH / RUSH INSTRUCTION — WRIKE TAGGED (6.01%)' },
+      { job: '919884', cust: '1939760 — Star High School', type: 'REMAKE / REWORK (4.15%)', item: 'IN83602D (Engraved Plate)', csm: '2137 CRYSTAL', notes: 'PDF REQUEST ONLY / DO NOT SHIP (5.28%)' },
+      { job: '489211', cust: '1048821 — Roosevelt Prep', type: 'STANDARD (95.3%)', item: 'CV01129A (Custom Stamping)', csm: '2411 BRIAN', notes: 'NO NAMES ON COVERS VERIFICATION (1.52%)' }
+    ];
 
     class OrderPacket {
       constructor() {
+        this.ticket = shopTicketLibrary[Math.floor(Math.random() * shopTicketLibrary.length)];
         this.x = 0;
         this.y = 0;
-        this.color = '#38bdf8';
         this.state = 'WC_TO_OE';
         this.t = 0;
-        this.speed = 0.0035 + Math.random() * 0.002;
+        this.baseSpeed = 0.0035 + Math.random() * 0.002;
         this.oeTrips = 0;
-        this.targetTrips = Math.floor(Math.random() * 5) + 2; // 2 to 6 internal bounce trips
+        this.targetTrips = Math.floor(Math.random() * 3) + 1;
         this.oeWaitTimer = 0;
         this.nlRejected = false;
-        
-        // Probabilities
+
         const rand = Math.random();
-        if (rand < 0.45) {
-          this.routeType = 'CLEAN';
-        } else if (rand < 0.75) {
-          this.routeType = 'REENTRY_TAX';
-        } else if (rand < 0.90) {
-          this.routeType = 'CS_HOLD';
+        if (rand < 0.0415) {
+          this.routeType = 'REMAKE_TAX';
+        } else if (rand < 0.0943) {
+          this.routeType = 'CS_HOLD_DNS';
+        } else if (rand < simProofRate) {
+          this.routeType = 'PROOF_LOOP';
         } else {
-          this.routeType = 'NL_REJECT';
+          this.routeType = 'CLEAN';
         }
       }
 
       update(N) {
-        this.t += this.speed;
+        this.t += this.baseSpeed * simSpeedMultiplier;
 
         switch (this.state) {
           case 'WC_TO_OE':
@@ -507,11 +604,11 @@
             this.y = N.wcQueue.y;
             if (this.t >= 1) {
               this.t = 0;
-              if (this.routeType === 'REENTRY_TAX') {
+              if (this.routeType === 'REMAKE_TAX') {
                 this.state = 'OE_BOUNCE_WC_TO_ORA';
-              } else if (this.routeType === 'CS_HOLD') {
+              } else if (this.routeType === 'CS_HOLD_DNS') {
                 this.state = 'OE_TO_CS';
-                totalCsHolds++;
+                liveCsHolds++;
               } else {
                 this.state = 'OE_TO_NL';
               }
@@ -527,7 +624,7 @@
             if (this.t >= 1) {
               this.t = 0;
               this.oeTrips++;
-              totalReentryTrips++;
+              liveReentries++;
               this.state = 'OE_BOUNCE_ORA_TO_WC';
             }
             break;
@@ -541,7 +638,7 @@
             if (this.t >= 1) {
               this.t = 0;
               this.oeTrips++;
-              totalReentryTrips++;
+              liveReentries++;
               if (this.oeTrips >= this.targetTrips) {
                 this.state = 'OE_TO_NL';
               } else {
@@ -551,7 +648,6 @@
             break;
 
           case 'OE_TO_CS':
-            // Downward curved path to CS Hold (Teams/In-person backchannel)
             this.color = '#60a5fa';
             const cp1 = { x: N.orderEntry.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 };
             const cp2 = { x: N.csHold.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 };
@@ -573,12 +669,10 @@
             if (this.oeWaitTimer <= 0) {
               this.t = 0;
               this.state = 'CS_TO_OE_REJECT';
-              totalOracleErrors++;
             }
             break;
 
           case 'CS_TO_OE_REJECT':
-            // Upward formal reject loop
             this.color = '#ef4444';
             const cpU1 = { x: N.csHold.x + 45, y: (N.orderEntry.y + N.csHold.y) / 2 };
             const cpU2 = { x: N.orderEntry.x + 45, y: (N.orderEntry.y + N.csHold.y) / 2 };
@@ -587,7 +681,7 @@
             this.y = ptUp.y;
             if (this.t >= 1) {
               this.t = 0;
-              this.routeType = 'CLEAN'; // Resolved
+              this.routeType = 'CLEAN';
               this.state = 'OE_TO_NL';
             }
             break;
@@ -598,9 +692,10 @@
             this.y = N.orderEntry.y;
             if (this.t >= 1) {
               this.t = 0;
-              if (this.routeType === 'NL_REJECT' && !this.nlRejected) {
+              if (this.routeType === 'PROOF_LOOP' && !this.nlRejected) {
                 this.state = 'NL_REJECT_TO_OE';
                 this.nlRejected = true;
+                liveProofHits++;
               } else {
                 this.state = 'NL_TO_PREPRESS';
               }
@@ -608,7 +703,6 @@
             break;
 
           case 'NL_REJECT_TO_OE':
-            // Backward arc over top
             this.color = '#eab308';
             const nlCp1 = { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 90 };
             const ptNl = getBezierPoint(this.t, N.namelist, nlCp1, nlCp1, N.orderEntry);
@@ -638,15 +732,15 @@
             this.y = N.prepress.y;
             if (this.t >= 1) {
               this.state = 'DONE';
-              totalToProd++;
             }
             break;
         }
       }
     }
 
+    let packets = [];
     function spawnOrder() {
-      if (packets.length < 24) {
+      if (packets.length < 22) {
         packets.push(new OrderPacket());
       }
     }
@@ -655,7 +749,70 @@
       p.t = Math.random();
       packets.push(p);
     }
-    setInterval(spawnOrder, 950);
+    setInterval(spawnOrder, 1000);
+
+    viewport.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      let found = null;
+      for (const p of packets) {
+        if (Math.hypot(clickX - p.x, clickY - p.y) <= 14) {
+          found = p;
+          break;
+        }
+      }
+
+      if (found) {
+        selectedPacket = found;
+        document.getElementById('tJob').textContent = `JOB #${found.ticket.job}`;
+        document.getElementById('tCust').textContent = found.ticket.cust;
+        document.getElementById('tType').textContent = found.ticket.type;
+        document.getElementById('tItem').textContent = found.ticket.item;
+        document.getElementById('tCsm').textContent = found.ticket.csm;
+        document.getElementById('tNotes').textContent = found.ticket.notes;
+
+        ticketModal.style.display = 'block';
+        ticketModal.style.left = `${Math.min(clickX + 15, width - 360)}px`;
+        ticketModal.style.top = `${Math.min(clickY + 15, height - 260)}px`;
+      }
+    });
+
+    function closeTicket() {
+      ticketModal.style.display = 'none';
+      selectedPacket = null;
+    }
+
+    viewport.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mousePos.x = e.clientX - rect.left;
+      mousePos.y = e.clientY - rect.top;
+
+      const N = getNodes();
+      hoveredNode = null;
+
+      for (const key in N) {
+        const node = N[key];
+        if (Math.hypot(mousePos.x - node.x, mousePos.y - node.y) <= node.r + 10) {
+          hoveredNode = node;
+          break;
+        }
+      }
+
+      if (hoveredNode && ticketModal.style.display !== 'block') {
+        hud.classList.add('active');
+        document.getElementById('hudTitle').textContent = hoveredNode.label;
+        document.getElementById('hudTag').textContent = hoveredNode.tag;
+        document.getElementById('hudTag').style.color = hoveredNode.color;
+        document.getElementById('hudDesc').textContent = hoveredNode.desc;
+        document.getElementById('hudStat').textContent = hoveredNode.stat;
+        hud.style.left = `${hoveredNode.x}px`;
+        hud.style.top = `${hoveredNode.y - hoveredNode.r - 10}px`;
+      } else {
+        hud.classList.remove('active');
+      }
+    });
 
     function drawDashedCurve(p1, p2, cp1, cp2, color, width = 1.5) {
       ctx.save();
@@ -691,14 +848,6 @@
       ctx.clearRect(0, 0, width, height);
       const N = getNodes();
 
-      // Telemetry Live Sync
-      elInTransit.textContent = packets.length;
-      elReentry.textContent = totalReentryTrips;
-      elCsHold.textContent = totalCsHolds;
-      elOracleError.textContent = totalOracleErrors;
-      elToProd.textContent = totalToProd;
-
-      // 1. Spine Track
       ctx.strokeStyle = '#334155';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
@@ -706,36 +855,11 @@
       ctx.lineTo(N.production.x, N.production.y);
       ctx.stroke();
 
-      // 2. Routing Loops
-      drawDashedCurve(
-        N.orderEntry, N.csHold,
-        { x: N.orderEntry.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 },
-        { x: N.csHold.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 },
-        '#60a5fa', 2
-      );
+      drawDashedCurve(N.orderEntry, N.csHold, { x: N.orderEntry.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 }, { x: N.csHold.x - 55, y: (N.orderEntry.y + N.csHold.y) / 2 }, '#60a5fa', 2);
+      drawDashedCurve(N.csHold, N.orderEntry, { x: N.csHold.x + 45, y: (N.orderEntry.y + N.csHold.y) / 2 }, { x: N.orderEntry.x + 45, y: (N.orderEntry.y + N.csHold.y) / 2 }, '#ef4444', 2);
+      drawDashedCurve(N.namelist, N.orderEntry, { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 90 }, { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 90 }, '#64748b', 1.5);
+      drawDashedCurve(N.prepress, N.orderEntry, { x: (N.prepress.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 130 }, { x: (N.prepress.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 130 }, '#475569', 1.5);
 
-      drawDashedCurve(
-        N.csHold, N.orderEntry,
-        { x: N.csHold.x + 45, y: (N.orderEntry.y + N.csHold.y) / 2 },
-        { x: N.orderEntry.x + 45, y: (N.orderEntry.y + N.csHold.y) / 2 },
-        '#ef4444', 2
-      );
-
-      drawDashedCurve(
-        N.namelist, N.orderEntry,
-        { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 90 },
-        { x: (N.namelist.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 90 },
-        '#64748b', 1.5
-      );
-
-      drawDashedCurve(
-        N.prepress, N.orderEntry,
-        { x: (N.prepress.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 130 },
-        { x: (N.prepress.x + N.orderEntry.x) / 2, y: N.orderEntry.y - 130 },
-        '#475569', 1.5
-      );
-
-      // 3. Render Nodes
       Object.values(N).forEach(node => {
         const isHovered = (hoveredNode && hoveredNode.id === node.id);
 
@@ -744,16 +868,14 @@
         ctx.lineWidth = isHovered ? 2.5 : 1.5;
         ctx.beginPath();
         ctx.arc(node.x, node.y, isHovered ? node.r + 4 : node.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        ctx.fill(); ctx.stroke();
 
         ctx.fillStyle = '#07090e';
         ctx.strokeStyle = isHovered ? '#ffffff' : node.color;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(node.x, node.y, node.r * 0.45, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        ctx.fill(); ctx.stroke();
 
         if (node.id === 'orderEntry') {
           ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
@@ -793,7 +915,6 @@
       ctx.textAlign = 'right';
       ctx.fillText('Teams / in-person', N.orderEntry.x - 65, (N.orderEntry.y + N.csHold.y) / 2);
 
-      // 4. Update & Render Simulated Packets
       for (let i = packets.length - 1; i >= 0; i--) {
         const p = packets[i];
         p.update(N);
